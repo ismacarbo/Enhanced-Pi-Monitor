@@ -4,35 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <!-- Include Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <h1>Welcome, {{ username }}</h1>
-  
-  <!-- Link to Weather Page -->
-  <section id="weather-link">
-    <h2>Weather Radar</h2>
-    <p>View the weather radar data: <a href="{{ url_for('weather') }}">Go to Weather Radar</a></p>
-  </section>
-  
-  <!-- System Information Section -->
-  <section id="system-info">
-    <h2>System Information</h2>
-    <!-- Canvas per il grafico di sistema con dimensioni ridotte -->
-    <canvas id="systemChart" width="150" height="150"></canvas>
-  </section>
-  
-  <!-- Network Information Section -->
-  <section id="network-info">
-    <h2>Network Information</h2>
-    <!-- Canvas per il grafico di rete con dimensioni ridotte -->
-    <canvas id="networkChart" width="150" height="150"></canvas>
-  </section>
+  <div class="dashboard-container">
+    <h1>Welcome, {{ username }}</h1>
+    
+    <!-- Link al Weather -->
+    <section id="weather-link">
+      <h2>Weather Radar</h2>
+      <p>View the weather radar data: <a href="{{ url_for('weather') }}">Go to Weather Radar</a></p>
+    </section>
+    
+    <!-- Sezione Informazioni di Sistema -->
+    <section id="system-info">
+      <h2>System Information</h2>
+      <canvas id="systemChart" width="150" height="150"></canvas>
+    </section>
+    
+    <!-- Sezione Informazioni di Rete -->
+    <section id="network-info">
+      <h2>Network Information</h2>
+      <canvas id="networkChart" width="150" height="150"></canvas>
+    </section>
+  </div>
   
   <script>
-    // Inizializzazione dei grafici con dati iniziali a zero
+    // Inizializzazione del grafico di sistema
     const systemCtx = document.getElementById('systemChart').getContext('2d');
     let systemChart = new Chart(systemCtx, {
       type: 'bar',
@@ -55,15 +55,12 @@
         }]
       },
       options: {
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        },
+        scales: { y: { beginAtZero: true } },
         animation: false
       }
     });
-
+  
+    // Inizializzazione del grafico di rete
     const networkCtx = document.getElementById('networkChart').getContext('2d');
     let networkChart = new Chart(networkCtx, {
       type: 'line',
@@ -100,7 +97,7 @@
         animation: false
       }
     });
-
+  
     function updateSystemChart() {
       fetch('/api/system')
       .then(response => response.json())
@@ -108,23 +105,21 @@
         const cpuTemp = data.cpu_temperature || 0;
         const memPercent = data.memory.percent || 0;
         const diskPercent = data.disk.percent || 0;
-        
         systemChart.data.datasets[0].data = [cpuTemp, memPercent, diskPercent];
         systemChart.update();
       })
       .catch(error => console.error('Error fetching system info:', error));
     }
-
+  
     function updateNetworkChart() {
       fetch('/api/network')
       .then(response => response.json())
       .then(data => {
         const interfaces = Object.keys(data);
-        if(interfaces.length > 0) {
+        if (interfaces.length > 0) {
           const iface = interfaces[0];
           const bytesSent = data[iface].bytes_sent;
           const bytesRecv = data[iface].bytes_recv;
-          
           networkChart.data.labels = [iface];
           networkChart.data.datasets[0].data = [bytesSent];
           networkChart.data.datasets[1].data = [bytesRecv];
@@ -133,12 +128,12 @@
       })
       .catch(error => console.error('Error fetching network info:', error));
     }
-
+  
     setInterval(() => {
       updateSystemChart();
       updateNetworkChart();
     }, 5000);
-
+  
     updateSystemChart();
     updateNetworkChart();
   </script>

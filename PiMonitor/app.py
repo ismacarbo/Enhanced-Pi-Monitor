@@ -9,28 +9,25 @@ import requests
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '' 
+app.config['SECRET_KEY'] = ''  
 
 
 TELEGRAM_BOT_TOKEN = ""
 TELEGRAM_CHAT_ID = ""
-ALERT_INTERVAL = 300 
+ALERT_INTERVAL = 300  
 last_alert_time = 0
 
+
 CPU_TEMP_THRESHOLD = 70.0  
-ENERGY_THRESHOLD = 60.0  
+ENERGY_THRESHOLD = 60.0    
 
 def get_energy_consumption():
-    """
-    Funzione di esempio che simula l'energia consumata in watt.
-    In un'applicazione reale sostituisci questo valore con la lettura di un sensore.
-    """
     return round(random.uniform(40, 80), 2)
 
 def send_telegram_alert(message):
     global last_alert_time
     now = time.time()
-
+    
     if now - last_alert_time > ALERT_INTERVAL:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {
@@ -72,7 +69,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == '' and password == '':
+        if username == 'ismacarbo' and password == '211104!!isma':
             token = jwt.encode({
                 'username': username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
@@ -90,14 +87,16 @@ def dashboard(current_user):
 
 
 @app.route('/weather')
-@token_required
-def weather(current_user):
-    return render_template('weather.html', username=current_user)
+def weather():
+    
+    return render_template('weather.html')
 
 
 @app.route('/portfolio')
 def portfolio():
     return render_template('portfolio.html')
+
+
 
 @app.route('/api/system', methods=['GET'])
 @token_required
@@ -112,7 +111,7 @@ def system_info(current_user):
     disk = psutil.disk_usage('/')
     energy = get_energy_consumption()
 
-
+    
     if cpu_temp > CPU_TEMP_THRESHOLD:
         send_telegram_alert(f"Alert: CPU temperature is high ({cpu_temp} °C)!")
     if energy > ENERGY_THRESHOLD:
@@ -133,7 +132,7 @@ def system_info(current_user):
             "percent": disk.percent
         },
         "energy_consumption": energy,
-        "power_status": "Online"
+        "power_status": "Online"  
     }
     return jsonify(data)
 
