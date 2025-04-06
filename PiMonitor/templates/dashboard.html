@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <!-- Include Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Welcome, {{ username }}</h1>
+  
+  <!-- Link to Weather Page -->
+  <section id="weather-link">
+    <h2>Weather Radar</h2>
+    <p>View the weather radar data: <a href="{{ url_for('weather') }}">Go to Weather Radar</a></p>
+  </section>
+  
+  <!-- System Information Section -->
+  <section id="system-info">
+    <h2>System Information</h2>
+    <!-- Canvas per il grafico di sistema con dimensioni ridotte -->
+    <canvas id="systemChart" width="150" height="150"></canvas>
+  </section>
+  
+  <!-- Network Information Section -->
+  <section id="network-info">
+    <h2>Network Information</h2>
+    <!-- Canvas per il grafico di rete con dimensioni ridotte -->
+    <canvas id="networkChart" width="150" height="150"></canvas>
+  </section>
+  
+  <script>
+    // Inizializzazione dei grafici con dati iniziali a zero
+    const systemCtx = document.getElementById('systemChart').getContext('2d');
+    let systemChart = new Chart(systemCtx, {
+      type: 'bar',
+      data: {
+        labels: ['CPU Temp (°C)', 'Memory (%)', 'Disk (%)'],
+        datasets: [{
+          label: 'System Data',
+          data: [0, 0, 0],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.5)',
+            'rgba(54, 162, 235, 0.5)',
+            'rgba(255, 206, 86, 0.5)'
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        animation: false
+      }
+    });
+
+    const networkCtx = document.getElementById('networkChart').getContext('2d');
+    let networkChart = new Chart(networkCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Bytes Sent',
+            data: [],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: false,
+          },
+          {
+            label: 'Bytes Received',
+            data: [],
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return (value / (1024 * 1024)).toFixed(1) + " MB";
+              }
+            }
+          }
+        },
+        animation: false
+      }
+    });
+
+    function updateSystemChart() {
+      fetch('/api/system')
+      .then(response => response.json())
+      .then(data => {
+        const cpuTemp = data.cpu_temperature || 0;
+        const memPercent = data.memory.percent || 0;
+        const diskPercent = data.disk.percent || 0;
+        
+        systemChart.data.datasets[0].data = [cpuTemp, memPercent, diskPercent];
+        systemChart.update();
+      })
+      .catch(error => console.error('Error fetching system info:', error));
+    }
+
+    function updateNetworkChart() {
+      fetch('/api/network')
+      .then(response => response.json())
+      .then(data => {
+        const interfaces = Object.keys(data);
+        if(interfaces.length > 0) {
+          const iface = interfaces[0];
+          const bytesSent = data[iface].bytes_sent;
+          const bytesRecv = data[iface].bytes_recv;
+          
+          networkChart.data.labels = [iface];
+          networkChart.data.datasets[0].data = [bytesSent];
+          networkChart.data.datasets[1].data = [bytesRecv];
+          networkChart.update();
+        }
+      })
+      .catch(error => console.error('Error fetching network info:', error));
+    }
+
+    setInterval(() => {
+      updateSystemChart();
+      updateNetworkChart();
+    }, 5000);
+
+    updateSystemChart();
+    updateNetworkChart();
+  </script>
+</body>
+</html>

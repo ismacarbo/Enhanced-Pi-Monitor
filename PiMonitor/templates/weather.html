@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Radar</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    #windy {
+      width: 100vw;
+      height: 100vh;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .controls button {
+      color: white;
+      background: transparent;
+      border: 1px solid white;
+      padding: 10px;
+      cursor: pointer;
+      flex: 1;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+    .wind-speed, .temperature, .pressure {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .wind-speed label, .wind-speed select, .temperature label, .temperature select, .pressure label, .pressure select {
+      color: white;
+    }
+    .wind-speed select, .temperature select, .pressure select {
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid white;
+      color: white;
+    }
+    @media (max-width: 768px) {
+      .controls {
+          top: auto;
+          bottom: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          gap: 5px;
+      }
+      .button-group {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 5px;
+      }
+      .controls button {
+          width: 100%;
+          padding: 10px;
+      }
+      .wind-speed, .temperature, .pressure {
+          align-items: center;
+          width: 100%;
+      }
+    }
+    #windy #bottom,
+    #windy #mobile-ovr-select,
+    #windy #embed-zoom,
+    #windy #logo-wrapper,
+    #windy #logo-wrapper #logo {
+      visibility: hidden !important;
+    }
+    .radar-image {
+      position: absolute;
+      z-index: 1000;
+      width: 38px;
+      height: 38px;
+    }
+    .copyright-label {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border-radius: 3px;
+      z-index: 1100;
+    }
+  </style>
+  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+  <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+</head>
+<body>
+  <div id="windy"></div>
+  <div class="controls">
+    <div class="button-group">
+      <button onclick="changeOverlay('wind')">Wind</button>
+      <button onclick="changeOverlay('temp')">Temperature</button>
+      <button onclick="changeOverlay('pressure')">Pressure</button>
+      <button onclick="changeOverlay('radar')">Radar</button>
+    </div>
+    <div class="wind-speed" id="windSpeedContainer" style="display:none;">
+      <label for="windSpeed">Wind Speed: <span id="windSpeedValue">0</span> <span id="windSpeedUnit">m/s</span></label>
+      <label for="unitSelect">Unit:</label>
+      <select id="unitSelect" onchange="updateWindSpeedUnit()">
+        <option value="m/s">m/s</option>
+        <option value="km/h">km/h</option>
+        <option value="mph">mph</option>
+      </select>
+    </div>
+    <div class="temperature" id="temperatureContainer" style="display:none;">
+      <label for="temperature">Temperature: <span id="temperatureValue">0</span> <span id="temperatureUnit">°C</span></label>
+      <label for="tempUnitSelect">Unit:</label>
+      <select id="tempUnitSelect" onchange="updateTemperatureUnit()">
+        <option value="C">°C</option>
+        <option value="F">°F</option>
+      </select>
+    </div>
+    <div class="pressure" id="pressureContainer" style="display:none;">
+      <label for="pressure">Pressure: <span id="pressureValue">0</span> <span id="pressureUnit">hPa</span></label>
+      <label for="pressureUnitSelect">Unit:</label>
+      <select id="pressureUnitSelect" onchange="updatePressureUnit()">
+        <option value="hPa">hPa</option>
+        <option value="inHg">inHg</option>
+      </select>
+    </div>
+  </div>
+  <img id="radarImage" src="/static/marker1.jpg" class="radar-image" style="display:none;" />
+  <div class="copyright-label">© ismacarbo</div>
+  <script>
+    const openWeatherApiKey = '';
+
+    let options = {
+      key: '',
+      verbose: true,
+      overlay: 'wind',
+      zoom: 5,
+    };
+
+    function changeOverlay(newOverlay) {
+      options.overlay = newOverlay;
+      initWindy();
+      if (newOverlay === 'wind') {
+        document.getElementById('windSpeedContainer').style.display = 'flex';
+        document.getElementById('temperatureContainer').style.display = 'none';
+        document.getElementById('pressureContainer').style.display = 'none';
+        updateWindSpeed();
+      } else if (newOverlay === 'temp') {
+        document.getElementById('windSpeedContainer').style.display = 'none';
+        document.getElementById('temperatureContainer').style.display = 'flex';
+        document.getElementById('pressureContainer').style.display = 'none';
+        updateTemperature();
+      } else if (newOverlay === 'pressure') {
+        document.getElementById('windSpeedContainer').style.display = 'none';
+        document.getElementById('temperatureContainer').style.display = 'none';
+        document.getElementById('pressureContainer').style.display = 'flex';
+        updatePressure();
+      } else if (newOverlay === 'radar') {
+        document.getElementById('windSpeedContainer').style.display = 'none';
+        document.getElementById('temperatureContainer').style.display = 'none';
+        document.getElementById('pressureContainer').style.display = 'none';
+        document.getElementById('radarImage').style.display = 'block';
+      } else {
+        document.getElementById('windSpeedContainer').style.display = 'none';
+        document.getElementById('temperatureContainer').style.display = 'none';
+        document.getElementById('pressureContainer').style.display = 'none';
+      }
+    }
+
+    function updateWindSpeedUnit() {
+      const unitSelect = document.getElementById('unitSelect').value;
+      const windSpeedValue = parseFloat(document.getElementById('windSpeedValue').textContent);
+      let newValue;
+
+      switch (unitSelect) {
+        case 'km/h':
+          newValue = (windSpeedValue * 3.6).toFixed(2);
+          break;
+        case 'mph':
+          newValue = (windSpeedValue * 2.23694).toFixed(2);
+          break;
+        case 'm/s':
+          newValue = windSpeedValue.toFixed(2);
+          break;
+        default:
+          newValue = windSpeedValue.toFixed(2);
+      }
+
+      document.getElementById('windSpeedValue').textContent = newValue;
+      document.getElementById('windSpeedUnit').textContent = unitSelect;
+    }
+
+    function updateTemperatureUnit() {
+      const unitSelect = document.getElementById('tempUnitSelect').value;
+      const temperatureValue = parseFloat(document.getElementById('temperatureValue').textContent);
+      let newValue;
+
+      if (unitSelect === 'F') {
+        newValue = (temperatureValue * 9 / 5 + 32).toFixed(2);
+      } else {
+        newValue = ((temperatureValue - 32) * 5 / 9).toFixed(2);
+      }
+
+      document.getElementById('temperatureValue').textContent = newValue;
+      document.getElementById('temperatureUnit').textContent = `°${unitSelect}`;
+    }
+
+    function updatePressureUnit() {
+      const unitSelect = document.getElementById('pressureUnitSelect').value;
+      const pressureValue = parseFloat(document.getElementById('pressureValue').textContent);
+      let newValue;
+
+      if (unitSelect === 'inHg') {
+        newValue = (pressureValue * 0.02953).toFixed(2);
+      } else {
+        newValue = (pressureValue / 0.02953).toFixed(2);
+      }
+
+      document.getElementById('pressureValue').textContent = newValue;
+      document.getElementById('pressureUnit').textContent = unitSelect;
+    }
+
+    function updateWindSpeed() {
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`)
+          .then(response => response.json())
+          .then(data => {
+            const windSpeed = data.wind.speed;
+            document.getElementById('windSpeedValue').textContent = windSpeed.toFixed(2);
+            updateWindSpeedUnit();
+          })
+          .catch(error => console.error('Error fetching wind data:', error));
+      }, error => {
+        console.error('Error getting geolocation: ', error);
+      });
+    }
+
+    function updateTemperature() {
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`)
+          .then(response => response.json())
+          .then(data => {
+            const temperature = data.main.temp;
+            document.getElementById('temperatureValue').textContent = temperature.toFixed(2);
+            updateTemperatureUnit();
+          })
+          .catch(error => console.error('Error fetching temperature data:', error));
+      }, error => {
+        console.error('Error getting geolocation: ', error);
+      });
+    }
+
+    function updatePressure() {
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`)
+          .then(response => response.json())
+          .then(data => {
+            const pressure = data.main.pressure;
+            document.getElementById('pressureValue').textContent = pressure.toFixed(2);
+            updatePressureUnit();
+          })
+          .catch(error => console.error('Error fetching pressure data:', error));
+      }, error => {
+        console.error('Error getting geolocation: ', error);
+      });
+    }
+
+    function initWindy() {
+      document.getElementById('windy').innerHTML = '';
+      document.getElementById('radarImage').style.display = 'none';
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        windyInit(options, windyAPI => {
+          const { map } = windyAPI;
+          if (options.overlay === 'radar') {
+            const radarImage = document.getElementById('radarImage');
+            radarImage.style.display = 'block';
+            const point = map.latLngToContainerPoint([lat, lon]);
+            radarImage.style.top = `${point.y - radarImage.height / 2}px`;
+            radarImage.style.left = `${point.x - radarImage.width / 2}px`;
+          } else {
+            L.marker([lat, lon]).addTo(map);
+          }
+          map.setView([lat, lon], 10);
+        });
+      }, error => {
+        console.error('Error getting geolocation: ', error);
+        initWindyMapWithoutCircle();
+      });
+    }
+
+    function initWindyMapWithoutCircle() {
+      windyInit(options, windyAPI => {
+        const { map } = windyAPI;
+        const defaultLat = 46.074779;
+        const defaultLon = 11.121749;
+        map.setView([defaultLat, defaultLon], 5);
+      });
+    }
+
+    // Initialize Windy map with default options
+    initWindy();
+    changeOverlay('wind');
+  </script>
+</body>
+</html>

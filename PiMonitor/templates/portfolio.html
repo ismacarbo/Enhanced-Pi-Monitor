@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio - Ismaele Carbonari</title>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <!-- Stili -->
+    <style>
+      /* Reset di base per link e body */
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Open Sans', sans-serif;
+        background-color: #1b1b1b;
+        color: #efefef;
+      }
+      ::selection {
+        background-color: #f7ca18;
+        color: #1b1b1b;
+      }
+      /* Stili del menu di navigazione (altezza ridotta) */
+      nav {
+        width: 100%;
+        background-color: #0b0b0b;
+        position: fixed;
+        bottom: 0;
+        height: 60px;
+        overflow: hidden;
+        z-index: 1000;
+      }
+      nav ul {
+        position: absolute;
+        top: 0;
+        left: 0;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+      }
+      nav li {
+        margin: 0;
+        float: left;
+        display: inline-block;
+        height: 58px;
+        margin-bottom: 2px;
+        line-height: 60px;
+        width: calc(100vw / 6);
+        text-align: center;
+        /* Cambiato da #555 a #efefef per rendere il testo ben visibile */
+        color: #efefef;
+        transition: background-color 0.5s ease, color 0.3s ease;
+        cursor: pointer;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        font-weight: 800;
+        transform: translateY(100%);
+      }
+      nav li.active {
+        background-color: #151515;
+        color: #efefef;
+      }
+      nav li.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: #f7ca18;
+      }
+      /* Animazioni per il menu */
+      nav li:nth-child(1) {
+        animation: pop 0.5s 0.15s 1 forwards;
+      }
+      nav li:nth-child(2) {
+        animation: pop 0.5s 0.30s 1 forwards;
+      }
+      nav li:nth-child(3) {
+        animation: pop 0.5s 0.45s 1 forwards;
+      }
+      nav li:nth-child(4) {
+        animation: pop 0.5s 0.60s 1 forwards;
+      }
+      nav li:nth-child(5) {
+        animation: pop 0.5s 0.75s 1 forwards;
+      }
+      nav li:nth-child(6) {
+        animation: pop 0.5s 0.90s 1 forwards;
+      }
+      nav li:hover {
+        color: #ffffff;
+      }
+      nav li:active {
+        background-color: #222;
+      }
+      /* Slide indicator per il menu */
+      nav li.slide {
+        position: absolute;
+        left: calc(-100vw / 6);
+        top: 0;
+        background-color: #fff;
+        z-index: -1;
+        height: 2px;
+        margin-top: 58px;
+        transition: left 0.3s ease;
+        transform: translateY(0);
+      }
+      /* Stili per le sezioni (altezza e padding maggiorati) */
+      section {
+        background-color: #1b1b1b;
+        min-height: 110vh;
+        padding: 50px 20px 120px;
+        color: #efefef;
+      }
+      .section-title {
+        text-align: center;
+        font-size: 3rem;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.3rem;
+      }
+      /* Altri stili per sezioni e contenuti */
+      #home .intro {
+        max-width: 60%;
+        margin: 0 auto;
+        text-align: center;
+      }
+      #home .intro h1 {
+        font-size: 8vw;
+        margin-bottom: 0.5rem;
+      }
+      #home .intro h2 {
+        font-size: 5vw;
+        margin-bottom: 1rem;
+      }
+      #about .content,
+      #skills .content {
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.8;
+      }
+      #progetti .card-container,
+      #lavori .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+      .card {
+        background: #151515;
+        margin: 10px;
+        padding: 15px;
+        width: 300px;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        text-align: center;
+      }
+      .card img {
+        width: 100%;
+        border-radius: 5px;
+      }
+      #contact .contact-info {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      #contact form {
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      #contact form input,
+      #contact form textarea {
+        margin: 10px 0;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+      }
+      #contact form input[type="submit"] {
+        background-color: #f7ca18;
+        color: #1b1b1b;
+        font-weight: bold;
+        cursor: pointer;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li class="active"><a href="#home">Home</a></li>
+        <li><a href="#about">About Me</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#progetti">Progetti</a></li>
+        <li><a href="#lavori">Lavori</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li class="slide"></li>
+      </ul>
+    </nav>
+
+    <section id="home">
+      <div class="intro">
+        <h1>Ismaele Carbonari</h1>
+        <h2>Software Developer &amp; Digital Enthusiast</h2>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2 class="section-title">About Me</h2>
+      <div class="content">
+        <p>
+          Sono Ismaele Carbonari, un appassionato di tecnologia e sviluppo software. Mi piace esplorare nuove tecnologie e trasformare idee in soluzioni digitali concrete.
+        </p>
+      </div>
+    </section>
+
+    <section id="skills">
+      <h2 class="section-title">Skills</h2>
+      <div class="content">
+        <h3>Lingue</h3>
+        <ul>
+          <li><strong>Italiano:</strong> Madrelingua</li>
+          <li><strong>Inglese:</strong> Livello B2</li>
+          <li><strong>Tedesco:</strong> Livello A1-A2</li>
+        </ul>
+        <h3>Competenze Digitali</h3>
+        <ul>
+          <li>Java, Python, JavaScript, C++</li>
+          <li>React, Angular, Spring, Django</li>
+          <li>MySQL, MongoDB, PostgreSQL</li>
+          <li>Testing e Debugging</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="progetti">
+      <h2 class="section-title">Progetti</h2>
+      <div class="card-container">
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Olimpiadi di Informatica" />
+          <h3>Olimpiadi di Informatica (OLINFO)</h3>
+          <p>Partecipazione, posizionamento 5° regionale.</p>
+          <a href="https://olimpiadi-informatica.it/" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Corso CISCO CCNA-v7" />
+          <h3>Corso CISCO CCNA-v7</h3>
+          <p>Formazione in routing & switching.</p>
+          <a href="https://www.netacad.com/" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Cyberchallenge" />
+          <h3>Cyberchallenge</h3>
+          <p>Evento di cybersecurity e hacking etico.</p>
+          <a href="https://cyberchallenge.it/" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="DrawingNeuralNetwork" />
+          <h3>DrawingNeuralNetwork</h3>
+          <p>App di disegno e riconoscimento oggetti.</p>
+          <a href="https://github.com/ismacarbo/DrawingNeuralNetwork" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="RaspberryPiMonitor" />
+          <h3>RaspberryPiMonitor</h3>
+          <p>Monitoraggio del Raspberry Pi con REST API e grafici.</p>
+          <a href="https://github.com/ismacarbo/RaspberryPiMonitor" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Invaders" />
+          <h3>Invaders</h3>
+          <p>Gioco JavaFX controllato da volante.</p>
+          <a href="https://github.com/ismacarbo/Invaders" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="FaceRecognition" />
+          <h3>FaceRecognition</h3>
+          <p>Face recognition in tempo reale con OpenCV.</p>
+          <a href="https://github.com/ismacarbo/FaceRecognition" target="_blank">Scopri di più</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="lavori">
+      <h2 class="section-title">Lavori</h2>
+      <div class="card-container">
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Coding Freelancer" />
+          <h3>Coding Freelancer</h3>
+          <p>Sviluppo di applicazioni personalizzate.</p>
+          <a href="https://www.freelancer.com/u/ismacarbo" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Programmatore Formula Student" />
+          <h3>Programmatore Formula Student</h3>
+          <p>Sviluppatore software presso Eagle-TRT.</p>
+          <a href="https://www.eagletrt.it/" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Tecnico informatico" />
+          <h3>Tecnico informatico</h3>
+          <p>Installazione software/hardware e sviluppo front/back end.</p>
+          <a href="https://www.dexit.it/" target="_blank">Scopri di più</a>
+        </div>
+        <div class="card">
+          <img src="https://via.placeholder.com/300x200" alt="Ripetizioni" />
+          <h3>Ripetizioni di Informatica e Matematica</h3>
+          <p>Supporto per studenti in informatica e matematica.</p>
+          <a href="#" target="_blank">Scopri di più</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <h2 class="section-title">Contact Me</h2>
+      <div class="contact-info">
+        <p><strong>Email:</strong> tiados04@gmail.com</p>
+        <p><strong>Telefono:</strong> +39 3713380245</p>
+        <p><strong>Indirizzo:</strong> Località Morganti 4, 38064 Folgaria (Italia)</p>
+        <p>
+          <a href="Ismaele Carbonari - CV-1.pdf" target="_blank" style="color:#f7ca18;">Visualizza il mio CV.</a>
+        </p>
+        <p>
+          <a href="https://www.linkedin.com/in/isma-carbo-6a9a32251/" target="_blank" style="color:#f7ca18;">LinkedIn</a>
+        </p>
+      </div>
+      <form action="#" method="post">
+        <input type="text" name="name" placeholder="Il tuo nome" required />
+        <input type="email" name="email" placeholder="La tua email" required />
+        <textarea name="message" rows="5" placeholder="Il tuo messaggio" required></textarea>
+        <input type="submit" value="Invia" />
+      </form>
+    </section>
+
+    <!-- Script per il menu a slide, lo smooth scrolling e l'aggiornamento in base allo scroll -->
+    <script>
+      (function($) {
+        function updateMenu() {
+          var scrollPos = $(document).scrollTop();
+          var sections = ['#home', '#about', '#skills', '#progetti', '#lavori', '#contact'];
+          var activeIndex = 0;
+          sections.forEach(function(section, index) {
+            var offset = $(section).offset().top - 150;
+            var height = $(section).outerHeight();
+            if (scrollPos >= offset && scrollPos < offset + height) {
+              activeIndex = index;
+            }
+          });
+          $('nav li').removeClass('active');
+          $('nav li').eq(activeIndex).addClass('active');
+          $('.slide').css('left', 'calc(' + activeIndex + ' * (100vw / 6))');
+        }
+        $('nav a[href^="#"]').on('click', function(e) {
+          e.preventDefault();
+          var target = $(this.getAttribute('href'));
+          if (target.length) {
+            $('html, body').animate({
+              scrollTop: target.offset().top
+            }, 1000);
+          }
+        });
+        $(document).on('scroll', updateMenu);
+        $(document).ready(updateMenu);
+      })(jQuery);
+    </script>
+  </body>
+</html>

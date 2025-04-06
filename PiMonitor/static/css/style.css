@@ -1,0 +1,95 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#windy {
+  width: 100vw;
+  height: 100vh;
+}
+.controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.controls button {
+  color: white;
+  background: transparent;
+  border: 1px solid white;
+  padding: 10px;
+  cursor: pointer;
+  flex: 1;
+}
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+.wind-speed, .temperature, .pressure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 10px;
+}
+.wind-speed label, .wind-speed select, .temperature label, .temperature select, .pressure label, .pressure select {
+  color: white;
+}
+.wind-speed select, .temperature select, .pressure select {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid white;
+  color: white;
+}
+@media (max-width: 768px) {
+  .controls {
+      top: auto;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 5px;
+  }
+  .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+  }
+  .controls button {
+      width: 100%;
+      padding: 10px;
+  }
+  .wind-speed, .temperature, .pressure {
+      align-items: center;
+      width: 100%;
+  }
+}
+#windy #bottom,
+#windy #mobile-ovr-select,
+#windy #embed-zoom,
+#windy #logo-wrapper,
+#windy #logo-wrapper #logo {
+  visibility: hidden !important;
+}
+.radar-image {
+  position: absolute;
+  z-index: 1000;
+  width: 38px;
+  height: 38px;
+}
+.copyright-label {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 3px;
+  z-index: 1100;
+}
