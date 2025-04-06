@@ -1,6 +1,4 @@
-==============================
-Raspberry Pi Monitoring Server
-==============================
+# Raspberry Pi Monitoring Server
 
 Description:
 ------------
