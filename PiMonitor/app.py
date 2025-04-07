@@ -9,11 +9,11 @@ import requests
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = ''  
+app.config['SECRET_KEY'] = 'Ismaele04!'  
 
 
-TELEGRAM_BOT_TOKEN = ""
-TELEGRAM_CHAT_ID = ""
+TELEGRAM_BOT_TOKEN = "7927241484:AAEva_3VmnzjLoLwlwAoRj1u54wq7Tmp2us"
+TELEGRAM_CHAT_ID = "695326432"
 ALERT_INTERVAL = 300  
 last_alert_time = 0
 
@@ -22,6 +22,10 @@ CPU_TEMP_THRESHOLD = 70.0
 ENERGY_THRESHOLD = 60.0    
 
 def get_energy_consumption():
+    """
+    Funzione di esempio che simula l'energia consumata in watt.
+    In un'applicazione reale sostituisci questo valore con la lettura di un sensore.
+    """
     return round(random.uniform(40, 80), 2)
 
 def send_telegram_alert(message):
