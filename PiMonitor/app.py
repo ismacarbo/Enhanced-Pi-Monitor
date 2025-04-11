@@ -23,8 +23,7 @@ ENERGY_THRESHOLD = 60.0
 
 def get_energy_consumption():
     """
-    Funzione di esempio che simula l'energia consumata in watt.
-    In un'applicazione reale sostituisci questo valore con la lettura di un sensore.
+    work in progress
     """
     return round(random.uniform(40, 80), 2)
 
@@ -163,13 +162,67 @@ def temperature():
         try:
             temp_value = float(temp)
             hum_value = float(hum)
-            # Puoi salvare i dati, eseguire controlli o inviare alert se necessario.
+            
             print(f"Temperatura ricevuta: {temp_value} °C, Umidità ricevuta: {hum_value} %")
             return jsonify({"status": "success", "temperature": temp_value, "humidity": hum_value}), 200
         except ValueError:
             return jsonify({"status": "error", "message": "Valori non validi"}), 400
     else:
         return jsonify({"status": "error", "message": "Parametri mancanti"}), 400
+
+
+def send_telegram_photo(photo_path, caption):
+    """
+    Invia una foto al canale/utente Telegram specificato.
+    """
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    with open(photo_path, 'rb') as photo_file:
+        files = {'photo': photo_file}
+        data = {
+            'chat_id': TELEGRAM_CHAT_ID,
+            'caption': caption
+        }
+        try:
+            response = requests.post(url, data=data, files=files)
+            if response.status_code == 200:
+                print("Foto inviata correttamente a Telegram.")
+            else:
+                print("Errore nell'invio a Telegram:", response.text)
+        except Exception as e:
+            print("Eccezione nell'invio della foto a Telegram:", e)
+
+def process_face(image_path):
+    """
+    work in progress
+    """
+    
+    riconosciuto = random.choice([True, False])
+    return "nome" if riconosciuto else "no"
+
+@app.route('/api/face', methods=['POST'])
+def face_recognition():
+    
+    image_data = request.get_data()
+    if not image_data:
+        return jsonify({"status": "error", "message": "Nessun dato ricevuto"}), 400
+
+    
+    image_path = "received_face.jpg"
+    try:
+        with open(image_path, "wb") as f:
+            f.write(image_data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Errore nel salvataggio dell'immagine: {e}"}), 500
+
+    
+    riconoscimento = process_face(image_path)
+    print(f"Risultato riconoscimento: {riconoscimento}")
+
+    
+    send_telegram_photo(image_path, caption=riconoscimento)
+
+    return jsonify({"status": "success", "message": "Immagine ricevuta e inviata a Telegram", "riconoscimento": riconoscimento}), 200
+
 
 
 if __name__ == '__main__':
