@@ -9,11 +9,11 @@ import requests
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Ismaele04!'  
+app.config['SECRET_KEY'] = ''  
 
 
-TELEGRAM_BOT_TOKEN = "7927241484:AAEva_3VmnzjLoLwlwAoRj1u54wq7Tmp2us"
-TELEGRAM_CHAT_ID = "695326432"
+TELEGRAM_BOT_TOKEN = ""
+TELEGRAM_CHAT_ID = ""
 ALERT_INTERVAL = 300  
 last_alert_time = 0
 
@@ -73,7 +73,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'ismacarbo' and password == '211104!!isma':
+        if username == 'ismacarbo' and password == '':
             token = jwt.encode({
                 'username': username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
@@ -154,6 +154,23 @@ def network_info(current_user):
             "packets_recv": stats.packets_recv
         }
     return jsonify(network_data)
+
+@app.route('/api/temperature', methods=['GET'])
+def temperature():
+    temp = request.args.get('temp')
+    hum = request.args.get('hum')
+    if temp and hum:
+        try:
+            temp_value = float(temp)
+            hum_value = float(hum)
+            # Puoi salvare i dati, eseguire controlli o inviare alert se necessario.
+            print(f"Temperatura ricevuta: {temp_value} °C, Umidità ricevuta: {hum_value} %")
+            return jsonify({"status": "success", "temperature": temp_value, "humidity": hum_value}), 200
+        except ValueError:
+            return jsonify({"status": "error", "message": "Valori non validi"}), 400
+    else:
+        return jsonify({"status": "error", "message": "Parametri mancanti"}), 400
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
