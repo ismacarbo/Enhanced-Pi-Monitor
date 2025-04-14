@@ -64,6 +64,7 @@ print("Caricamento immagini di riferimento completato.")
 
 
 def process_face(image_path):
+
     image = face_recognition.load_image_file(image_path)
     face_locations = face_recognition.face_locations(image)
     face_encodings = face_recognition.face_encodings(image, face_locations)
@@ -197,7 +198,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'ismacarbo' and password == '211104!!isma':
+        if username == 'ismacarbo' and password == '':
             token = jwt.encode({
                 'username': username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
