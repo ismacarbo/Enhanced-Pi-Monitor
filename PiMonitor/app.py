@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
 import jwt
 import datetime
@@ -13,27 +12,22 @@ import numpy as np
 import os
 from functools import wraps
 
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = ''
-
 
 TELEGRAM_BOT_TOKEN = ""
 TELEGRAM_CHAT_ID = ""
 ALERT_INTERVAL = 300  
 
-CPU_TEMP_THRESHOLD = 70.0   
-ENERGY_THRESHOLD = 60.0     
+CPU_TEMP_THRESHOLD = 70.0    
+VOLTAGE_THRESHOLD = 4.8      
 
-
-FACE_ALERT_INTERVAL = 30  
-
+FACE_ALERT_INTERVAL = 30     
 
 last_recognized_alerts = {}
 last_unrecognized_alert = 0
 
-
-KNOWN_FACES_DIR = "known_faces"  
+KNOWN_FACES_DIR = "known_faces"
 known_face_encodings = []
 known_face_names = []
 
@@ -53,7 +47,6 @@ def load_known_faces(directory):
             encodings = face_recognition.face_encodings(image_rgb)
             if encodings:
                 known_face_encodings.append(encodings[0])
-                
                 known_face_names.append(os.path.splitext(filename)[0])
                 print(f"Caricato encoding per {filename}")
             else:
@@ -62,9 +55,7 @@ def load_known_faces(directory):
 load_known_faces(KNOWN_FACES_DIR)
 print("Caricamento immagini di riferimento completato.")
 
-
 def process_face(image_path):
-
     image = face_recognition.load_image_file(image_path)
     face_locations = face_recognition.face_locations(image)
     face_encodings = face_recognition.face_encodings(image, face_locations)
@@ -86,7 +77,6 @@ def process_face(image_path):
     print("Faccia non riconosciuta.")
     return "unknown"
 
-
 def send_telegram_alert(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -103,15 +93,24 @@ def send_telegram_alert(message):
         print("Exception sending Telegram alert:", e)
 
 
-def get_energy_consumption():
-    return round(random.uniform(40, 80), 2)
-
-
+def get_voltage():
+    try:
+        
+        import Adafruit_ADS1x15
+        adc = Adafruit_ADS1x15.ADS1115()
+        GAIN = 1
+        value = adc.read_adc(0, gain=GAIN)
+        
+        voltage = value * (4.096 / 32767) * 2
+        return round(voltage, 2)
+    except Exception as e:
+        print("Errore nella lettura del voltaggio:", e)
+        
+        return round(random.uniform(4.5, 5.2), 2)
 
 STREAM_URL = 'http://192.168.1.103/stream'
 
 def gen_frames():
-
     try:
         stream = requests.get(STREAM_URL, stream=True, timeout=10)
     except requests.exceptions.RequestException as e:
@@ -131,10 +130,8 @@ def gen_frames():
             if frame is None:
                 continue
 
-            
             small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
             rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
-            
             
             face_locations = face_recognition.face_locations(rgb_small_frame)
             face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
@@ -150,7 +147,6 @@ def gen_frames():
                     if matches[best_match_index]:
                         name = known_face_names[best_match_index].upper()
                 
-                
                 if name != "unknown":
                     last_time = last_recognized_alerts.get(name, 0)
                     if current_time - last_time > FACE_ALERT_INTERVAL:
@@ -161,7 +157,6 @@ def gen_frames():
                         send_telegram_alert("Alert: Faccia non riconosciuta!")
                         last_unrecognized_alert = current_time
 
-                
                 top, right, bottom, left = top * 4, right * 4, bottom * 4, left * 4
                 cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
                 cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
@@ -172,7 +167,6 @@ def gen_frames():
             frame_jpeg = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_jpeg + b'\r\n')
-
 
 def token_required(f):
     @wraps(f)
@@ -187,7 +181,6 @@ def token_required(f):
             return redirect(url_for('login'))
         return f(current_user, *args, **kwargs)
     return decorated
-
 
 @app.route("/")
 def home():
@@ -221,7 +214,6 @@ def weather():
 def portfolio():
     return render_template('portfolio.html')
 
-
 @app.route('/api/system', methods=['GET'])
 @token_required
 def system_info(current_user):
@@ -233,12 +225,12 @@ def system_info(current_user):
 
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
-    energy = get_energy_consumption()
+    voltage = get_voltage()
     
     if cpu_temp > CPU_TEMP_THRESHOLD:
         send_telegram_alert(f"Alert: CPU temperature is high ({cpu_temp} °C)!")
-    if energy > ENERGY_THRESHOLD:
-        send_telegram_alert(f"Alert: Energy consumption is high ({energy} W)!")
+    if voltage < VOLTAGE_THRESHOLD:
+        send_telegram_alert(f"Alert: Batteria/UPS a voltaggio basso ({voltage} V)!")
 
     data = {
         "cpu_temperature": cpu_temp,
@@ -254,11 +246,10 @@ def system_info(current_user):
             "free": disk.free,
             "percent": disk.percent
         },
-        "energy_consumption": energy,
+        "voltage": voltage,
         "power_status": "Online"
     }
     return jsonify(data)
-
 
 @app.route('/api/network', methods=['GET'])
 @token_required
@@ -274,7 +265,6 @@ def network_info(current_user):
         }
     return jsonify(network_data)
 
-
 @app.route('/api/temperature', methods=['GET'])
 def temperature():
     temp = request.args.get('temp')
@@ -289,7 +279,6 @@ def temperature():
             return jsonify({"status": "error", "message": "Valori non validi"}), 400
     else:
         return jsonify({"status": "error", "message": "Parametri mancanti"}), 400
-
 
 @app.route('/api/face', methods=['POST'])
 def face_recognition_api():
@@ -314,18 +303,15 @@ def face_recognition_api():
     
     return jsonify({"status": "success", "message": "Immagine ricevuta e processata", "riconoscimento": riconoscimento}), 200
 
-
 @app.route('/video_feed')
 @token_required
 def video_feed(current_user):
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-
 @app.route('/stream_face')
 @token_required
 def stream_face(current_user):
-    
     return """
     <html>
       <head>
@@ -339,5 +325,4 @@ def stream_face(current_user):
     """
 
 if __name__ == '__main__':
-    
     app.run(host='0.0.0.0', port=5000, debug=True)
