@@ -11,12 +11,13 @@ import face_recognition
 import numpy as np
 import os
 from functools import wraps
+from config import SECRET_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PASSWORD, OPENWEATHER_API, WINDY_API
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = ''
+app.config['SECRET_KEY'] = SECRET_KEY
 
-TELEGRAM_BOT_TOKEN = ""
-TELEGRAM_CHAT_ID = ""
+TELEGRAM_BOT_TOKEN = TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID = TELEGRAM_CHAT_ID
 ALERT_INTERVAL = 300  
 
 CPU_TEMP_THRESHOLD = 70.0    
@@ -191,7 +192,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'ismacarbo' and password == '':
+        if username == 'ismacarbo' and password == PASSWORD:
             token = jwt.encode({
                 'username': username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
@@ -208,7 +209,7 @@ def dashboard(current_user):
 
 @app.route('/weather')
 def weather():
-    return render_template('weather.html')
+    return render_template('weather.html',openweather_key=OPENWEATHER_API,windy_key=WINDY_API)
 
 @app.route('/portfolio')
 def portfolio():

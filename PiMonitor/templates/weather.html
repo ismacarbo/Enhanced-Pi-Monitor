@@ -143,10 +143,11 @@
   <img id="radarImage" src="marker1.jpg" class="radar-image" style="display:none;" />
   <div class="copyright-label">© ismacarbo</div>
   <script>
-    const openWeatherApiKey = '';
+    const openWeatherApiKey = "{{ openweather_key }}";
+    const windyApiKey = "{{ windy_key }}";
 
     let options = {
-      key: '',
+      key: windyApiKey,
       verbose: true,
       overlay: 'wind',
       zoom: 5,

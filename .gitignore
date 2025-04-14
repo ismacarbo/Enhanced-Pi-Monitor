@@ -11,6 +11,7 @@ __pycache__/
 venv/
 env/
 PiMonitor/known_faces/
+PiMonitor/config.py
 
 # IDEs e editor
 .vscode/
