@@ -2,8 +2,9 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ssid     = "Telecom casa_EXT";
-const char* password = "40166575";
+
+const char* ssid     = "";
+const char* password = "";
 
 WebServer server(80);
 
@@ -14,7 +15,7 @@ WebServer server(80);
 
 void handleJPG();
 void handleJPGStream();
-void startCustomCameraServer();  
+void startCustomCameraServer();
 
 void setup() {
   Serial.begin(115200);
@@ -45,7 +46,7 @@ void setup() {
   config.pixel_format    = PIXFORMAT_JPEG;
   
   
-  if(psramFound()){
+  if (psramFound()){
     config.frame_size   = FRAMESIZE_UXGA;
     config.jpeg_quality = 10;
     config.fb_count     = 2;
@@ -63,19 +64,27 @@ void setup() {
   }
   
   
+  IPAddress local_IP(192, 168, 1, 103);  
+  IPAddress gateway(192, 168, 1, 1);       
+  IPAddress subnet(255, 255, 255, 0);      
+  if (!WiFi.config(local_IP, gateway, subnet)) {
+    Serial.println("Errore nella configurazione dell'IP statico.");
+  }
+  
+  
   WiFi.begin(ssid, password);
   Serial.print("Connessione al WiFi");
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
+  Serial.println();
   Serial.println("WiFi connesso");
   
   
   startCustomCameraServer();
   
-  Serial.print("Camera Stream Ready! Vai a: http://");
+  Serial.print("Camera Stream Ready! Vai a: http:
   Serial.print(WiFi.localIP());
   Serial.println("/");
 }
@@ -85,12 +94,12 @@ void loop() {
 }
 
 
-void handleJPG(){
+void handleJPG() {
   WiFiClient client = server.client();
   String header = "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n";
   server.sendContent(header);
 
-  camera_fb_t * fb = esp_camera_fb_get();
+  camera_fb_t* fb = esp_camera_fb_get();
   if(!fb) {
     Serial.println("Errore catturando l'immagine");
     return;
@@ -100,12 +109,12 @@ void handleJPG(){
 }
 
 
-void handleJPGStream(){
+void handleJPGStream() {
   String header = "HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace;boundary=frame\r\n\r\n";
   server.sendContent(header);
 
   while (1) {
-    camera_fb_t * fb = esp_camera_fb_get();
+    camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
       Serial.println("Errore catturando l'immagine");
       continue;
@@ -118,16 +127,16 @@ void handleJPGStream(){
     esp_camera_fb_return(fb);
 
     
-    if(!server.client().connected()){
+    if (!server.client().connected()) {
       break;
     }
   }
 }
 
 
-void startCustomCameraServer(){
+void startCustomCameraServer() {
   
-  server.on("/", HTTP_GET, [](){
+  server.on("/", HTTP_GET, []() {
     server.send(200, "text/html", "<html><body><img src='/stream'></body></html>");
   });
   

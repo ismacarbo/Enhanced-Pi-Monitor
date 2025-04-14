@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
 import jwt
 import datetime
 import psutil
@@ -6,46 +7,170 @@ import subprocess
 import random
 import time
 import requests
+import cv2
+import face_recognition
+import numpy as np
+import os
 from functools import wraps
 
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = ''  
+app.config['SECRET_KEY'] = ''
 
 
 TELEGRAM_BOT_TOKEN = ""
 TELEGRAM_CHAT_ID = ""
 ALERT_INTERVAL = 300  
-last_alert_time = 0
+
+CPU_TEMP_THRESHOLD = 70.0   
+ENERGY_THRESHOLD = 60.0     
 
 
-CPU_TEMP_THRESHOLD = 70.0  
-ENERGY_THRESHOLD = 60.0    
+FACE_ALERT_INTERVAL = 30  
 
-def get_energy_consumption():
-    """
-    work in progress
-    """
-    return round(random.uniform(40, 80), 2)
+
+last_recognized_alerts = {}
+last_unrecognized_alert = 0
+
+
+KNOWN_FACES_DIR = "known_faces"  
+known_face_encodings = []
+known_face_names = []
+
+def load_known_faces(directory):
+    if not os.path.exists(directory):
+        print(f"La cartella {directory} non esiste!")
+        return
+    for filename in os.listdir(directory):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            image_path = os.path.join(directory, filename)
+            image = cv2.imread(image_path)
+            if image is None:
+                print(f"Impossibile leggere l'immagine: {filename}")
+                continue
+            
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            encodings = face_recognition.face_encodings(image_rgb)
+            if encodings:
+                known_face_encodings.append(encodings[0])
+                
+                known_face_names.append(os.path.splitext(filename)[0])
+                print(f"Caricato encoding per {filename}")
+            else:
+                print(f"Nessuna faccia trovata in {filename}")
+
+load_known_faces(KNOWN_FACES_DIR)
+print("Caricamento immagini di riferimento completato.")
+
+
+def process_face(image_path):
+    image = face_recognition.load_image_file(image_path)
+    face_locations = face_recognition.face_locations(image)
+    face_encodings = face_recognition.face_encodings(image, face_locations)
+    
+    if len(face_encodings) == 0:
+        print("Nessuna faccia rilevata nell'immagine ricevuta.")
+        return "Nessuna faccia"
+    
+    face_encoding = face_encodings[0]
+    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+    face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+    
+    if len(face_distances) > 0:
+        best_match_index = np.argmin(face_distances)
+        if matches[best_match_index]:
+            recognized_name = known_face_names[best_match_index]
+            print(f"Riconosciuto: {recognized_name}")
+            return recognized_name
+    print("Faccia non riconosciuta.")
+    return "unknown"
+
 
 def send_telegram_alert(message):
-    global last_alert_time
-    now = time.time()
-    
-    if now - last_alert_time > ALERT_INTERVAL:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message
-        }
-        try:
-            response = requests.post(url, data=payload)
-            if response.status_code == 200:
-                print("Telegram alert sent.")
-                last_alert_time = now
-            else:
-                print("Error sending Telegram alert:", response.text)
-        except Exception as e:
-            print("Exception sending Telegram alert:", e)
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print("Telegram alert sent:", message)
+        else:
+            print("Error sending Telegram alert:", response.text)
+    except Exception as e:
+        print("Exception sending Telegram alert:", e)
+
+
+def get_energy_consumption():
+    return round(random.uniform(40, 80), 2)
+
+
+
+STREAM_URL = 'http://192.168.1.103/stream'
+
+def gen_frames():
+
+    try:
+        stream = requests.get(STREAM_URL, stream=True, timeout=10)
+    except requests.exceptions.RequestException as e:
+        print("Errore nella connessione allo stream:", e)
+        return
+
+    bytes_data = b''
+    global last_unrecognized_alert, last_recognized_alerts
+    for chunk in stream.iter_content(chunk_size=1024):
+        bytes_data += chunk
+        a = bytes_data.find(b'\xff\xd8')
+        b = bytes_data.find(b'\xff\xd9')
+        if a != -1 and b != -1:
+            jpg = bytes_data[a:b+2]
+            bytes_data = bytes_data[b+2:]
+            frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+            if frame is None:
+                continue
+
+            
+            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+            
+            
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+            
+            current_time = time.time()
+            
+            for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+                matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+                name = "unknown"
+                if len(face_distances) > 0:
+                    best_match_index = np.argmin(face_distances)
+                    if matches[best_match_index]:
+                        name = known_face_names[best_match_index].upper()
+                
+                
+                if name != "unknown":
+                    last_time = last_recognized_alerts.get(name, 0)
+                    if current_time - last_time > FACE_ALERT_INTERVAL:
+                        send_telegram_alert(f"Riconoscimento faccia: {name}")
+                        last_recognized_alerts[name] = current_time
+                else:
+                    if current_time - last_unrecognized_alert > FACE_ALERT_INTERVAL:
+                        send_telegram_alert("Alert: Faccia non riconosciuta!")
+                        last_unrecognized_alert = current_time
+
+                
+                top, right, bottom, left = top * 4, right * 4, bottom * 4, left * 4
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
+                cv2.putText(frame, name, (left + 6, bottom - 6),
+                            cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+            
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_jpeg = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_jpeg + b'\r\n')
 
 
 def token_required(f):
@@ -62,17 +187,17 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+
 @app.route("/")
 def home():
     return redirect(url_for("login"))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'ismacarbo' and password == '':
+        if username == 'ismacarbo' and password == '211104!!isma':
             token = jwt.encode({
                 'username': username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
@@ -82,23 +207,18 @@ def login():
         return render_template('login.html', error="Invalid credentials")
     return render_template('login.html')
 
-
 @app.route('/dashboard')
 @token_required
 def dashboard(current_user):
     return render_template('dashboard.html', username=current_user)
 
-
 @app.route('/weather')
 def weather():
-    
     return render_template('weather.html')
-
 
 @app.route('/portfolio')
 def portfolio():
     return render_template('portfolio.html')
-
 
 
 @app.route('/api/system', methods=['GET'])
@@ -113,7 +233,6 @@ def system_info(current_user):
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
     energy = get_energy_consumption()
-
     
     if cpu_temp > CPU_TEMP_THRESHOLD:
         send_telegram_alert(f"Alert: CPU temperature is high ({cpu_temp} °C)!")
@@ -135,7 +254,7 @@ def system_info(current_user):
             "percent": disk.percent
         },
         "energy_consumption": energy,
-        "power_status": "Online"  
+        "power_status": "Online"
     }
     return jsonify(data)
 
@@ -154,6 +273,7 @@ def network_info(current_user):
         }
     return jsonify(network_data)
 
+
 @app.route('/api/temperature', methods=['GET'])
 def temperature():
     temp = request.args.get('temp')
@@ -162,7 +282,6 @@ def temperature():
         try:
             temp_value = float(temp)
             hum_value = float(hum)
-            
             print(f"Temperatura ricevuta: {temp_value} °C, Umidità ricevuta: {hum_value} %")
             return jsonify({"status": "success", "temperature": temp_value, "humidity": hum_value}), 200
         except ValueError:
@@ -171,41 +290,11 @@ def temperature():
         return jsonify({"status": "error", "message": "Parametri mancanti"}), 400
 
 
-def send_telegram_photo(photo_path, caption):
-    """
-    Invia una foto al canale/utente Telegram specificato.
-    """
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-    with open(photo_path, 'rb') as photo_file:
-        files = {'photo': photo_file}
-        data = {
-            'chat_id': TELEGRAM_CHAT_ID,
-            'caption': caption
-        }
-        try:
-            response = requests.post(url, data=data, files=files)
-            if response.status_code == 200:
-                print("Foto inviata correttamente a Telegram.")
-            else:
-                print("Errore nell'invio a Telegram:", response.text)
-        except Exception as e:
-            print("Eccezione nell'invio della foto a Telegram:", e)
-
-def process_face(image_path):
-    """
-    work in progress
-    """
-    
-    riconosciuto = random.choice([True, False])
-    return "nome" if riconosciuto else "no"
-
 @app.route('/api/face', methods=['POST'])
-def face_recognition():
-    
+def face_recognition_api():
     image_data = request.get_data()
     if not image_data:
         return jsonify({"status": "error", "message": "Nessun dato ricevuto"}), 400
-
     
     image_path = "received_face.jpg"
     try:
@@ -213,17 +302,41 @@ def face_recognition():
             f.write(image_data)
     except Exception as e:
         return jsonify({"status": "error", "message": f"Errore nel salvataggio dell'immagine: {e}"}), 500
-
     
     riconoscimento = process_face(image_path)
     print(f"Risultato riconoscimento: {riconoscimento}")
-
     
-    send_telegram_photo(image_path, caption=riconoscimento)
+    if riconoscimento != "unknown" and riconoscimento != "Nessuna faccia":
+        send_telegram_alert(f"Riconoscimento faccia (API): {riconoscimento}")
+    else:
+        send_telegram_alert("Alert (API): Faccia non riconosciuta!")
+    
+    return jsonify({"status": "success", "message": "Immagine ricevuta e processata", "riconoscimento": riconoscimento}), 200
 
-    return jsonify({"status": "success", "message": "Immagine ricevuta e inviata a Telegram", "riconoscimento": riconoscimento}), 200
+
+@app.route('/video_feed')
+@token_required
+def video_feed(current_user):
+    return Response(gen_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+@app.route('/stream_face')
+@token_required
+def stream_face(current_user):
+    
+    return """
+    <html>
+      <head>
+        <title>Stream Riconoscimento Facciale</title>
+      </head>
+      <body>
+        <h1>Stream con riconoscimento facciale</h1>
+        <img src="/video_feed" style="width:80%;">
+      </body>
+    </html>
+    """
 
 if __name__ == '__main__':
+    
     app.run(host='0.0.0.0', port=5000, debug=True)
