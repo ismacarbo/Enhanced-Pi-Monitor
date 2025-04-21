@@ -297,14 +297,16 @@
         windyInit(options, windyAPI => {
           const { map } = windyAPI;
           if (options.overlay === 'radar') {
-            const radarImage = document.getElementById('radarImage');
-            radarImage.style.display = 'block';
-            const point = map.latLngToContainerPoint([lat, lon]);
-            radarImage.style.top = `${point.y - radarImage.height / 2}px`;
-            radarImage.style.left = `${point.x - radarImage.width / 2}px`;
-          } else {
-            L.marker([lat, lon]).addTo(map);
-          }
+              const radarImage = document.getElementById('radarImage');
+              radarImage.style.display = 'block';
+              const point = map.latLngToContainerPoint([lat, lon]);
+              radarImage.style.top = `${point.y - radarImage.height / 2}px`;
+              radarImage.style.left = `${point.x - radarImage.width / 2}px`;
+              L.marker([lat, lon]).addTo(map);
+            } else {
+              L.marker([lat, lon]).addTo(map);
+            }
+
           map.setView([lat, lon], 10);
         });
       }, error => {

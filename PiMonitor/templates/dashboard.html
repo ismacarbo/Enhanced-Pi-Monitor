@@ -23,6 +23,10 @@
                 <h2>Network Graph</h2>
                 <canvas id="networkChart"></canvas>
             </section>
+            <section id="sensor-graph">
+                <h2>Irrigation Data</h2>
+                <canvas id="sensorChart"></canvas>
+              </section>
             <!-- Card per lo stream della ESP32-CAM -->
             <section id="stream-card" class="link-card">
                 <h2>ESP32 Stream</h2>
@@ -101,5 +105,74 @@
     fetchNetworkData();
     setInterval(fetchNetworkData, 10000);
     </script>
+    <script>
+        let sensorChart;
+        async function fetchSensorData() {
+          try {
+            const res = await fetch('/api/irrigation_data');
+            const data = await res.json();
+            const labels        = data.map(d => new Date(d.time).toLocaleTimeString());
+            const moistureData  = data.map(d => d.moisture);
+            const lightData     = data.map(d => d.light);
+        
+            const chartData = {
+              labels,
+              datasets: [
+                {
+                  label: 'Moisture (%)',
+                  data: moistureData,
+                  yAxisID: 'y-moisture',
+                  borderColor: 'rgb(247,202,24)',
+                  fill: false
+                },
+                {
+                  label: 'Light (lux)',
+                  data: lightData,
+                  yAxisID: 'y-light',
+                  borderColor: 'rgb(75,192,192)',
+                  fill: false
+                }
+              ]
+            };
+        
+            const config = {
+              type: 'line',
+              data: chartData,
+              options: {
+                interaction: { mode: 'index', intersect: false },
+                stacked: false,
+                scales: {
+                  'y-moisture': {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    title: { display: true, text: '%' }
+                  },
+                  'y-light': {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'lux' }
+                  }
+                }
+              }
+            };
+        
+            if (sensorChart) {
+              sensorChart.data = chartData;
+              sensorChart.update();
+            } else {
+              const ctx = document.getElementById('sensorChart').getContext('2d');
+              sensorChart = new Chart(ctx, config);
+            }
+          } catch (err) {
+            console.error('Error fetching sensor data:', err);
+          }
+        }
+        fetchSensorData();
+        setInterval(fetchSensorData, 5000);
+        </script>
+        
 </body>
 </html>

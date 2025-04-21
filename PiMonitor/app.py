@@ -18,12 +18,15 @@ app.config['SECRET_KEY'] = SECRET_KEY
 
 TELEGRAM_BOT_TOKEN = TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID = TELEGRAM_CHAT_ID
-ALERT_INTERVAL = 300  
+ALERT_INTERVAL = 300
 
-CPU_TEMP_THRESHOLD = 70.0    
-VOLTAGE_THRESHOLD = 4.8      
+sensor_records = []
+MAX_RECORDS = 100
 
-FACE_ALERT_INTERVAL = 30     
+CPU_TEMP_THRESHOLD = 70.0
+VOLTAGE_THRESHOLD = 4.8
+
+FACE_ALERT_INTERVAL = 30
 
 last_recognized_alerts = {}
 last_unrecognized_alert = 0
@@ -34,167 +37,159 @@ known_face_names = []
 
 def load_known_faces(directory):
     if not os.path.exists(directory):
-        print(f"La cartella {directory} non esiste!")
+        print(f"Directory {directory} not found!")
         return
     for filename in os.listdir(directory):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            image_path = os.path.join(directory, filename)
-            image = cv2.imread(image_path)
-            if image is None:
-                print(f"Impossibile leggere l'immagine: {filename}")
+            path = os.path.join(directory, filename)
+            img = cv2.imread(path)
+            if img is None:
+                print(f"Unable to read image: {filename}")
                 continue
-            
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            encodings = face_recognition.face_encodings(image_rgb)
-            if encodings:
-                known_face_encodings.append(encodings[0])
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            encs = face_recognition.face_encodings(rgb)
+            if encs:
+                known_face_encodings.append(encs[0])
                 known_face_names.append(os.path.splitext(filename)[0])
-                print(f"Caricato encoding per {filename}")
+                print(f"Loaded encoding for {filename}")
             else:
-                print(f"Nessuna faccia trovata in {filename}")
+                print(f"No face found in {filename}")
 
 load_known_faces(KNOWN_FACES_DIR)
-print("Caricamento immagini di riferimento completato.")
+print("Reference faces loaded.")
+
 
 def process_face(image_path):
     image = face_recognition.load_image_file(image_path)
-    face_locations = face_recognition.face_locations(image)
-    face_encodings = face_recognition.face_encodings(image, face_locations)
-    
-    if len(face_encodings) == 0:
-        print("Nessuna faccia rilevata nell'immagine ricevuta.")
-        return "Nessuna faccia"
-    
-    face_encoding = face_encodings[0]
-    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-    face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-    
-    if len(face_distances) > 0:
-        best_match_index = np.argmin(face_distances)
-        if matches[best_match_index]:
-            recognized_name = known_face_names[best_match_index]
-            print(f"Riconosciuto: {recognized_name}")
-            return recognized_name
-    print("Faccia non riconosciuta.")
+    locs = face_recognition.face_locations(image)
+    encs = face_recognition.face_encodings(image, locs)
+    if not encs:
+        print("No face detected in uploaded image.")
+        return "No face"
+    enc = encs[0]
+    matches = face_recognition.compare_faces(known_face_encodings, enc)
+    dists = face_recognition.face_distance(known_face_encodings, enc)
+    if dists.size > 0:
+        best = np.argmin(dists)
+        if matches[best]:
+            name = known_face_names[best]
+            print(f"Recognized: {name}")
+            return name
+    print("Unknown face.")
     return "unknown"
+
 
 def send_telegram_alert(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message
-    }
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
     try:
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
+        resp = requests.post(url, data=payload)
+        if resp.status_code == 200:
             print("Telegram alert sent:", message)
         else:
-            print("Error sending Telegram alert:", response.text)
+            print("Telegram error:", resp.text)
     except Exception as e:
         print("Exception sending Telegram alert:", e)
 
 
 def get_voltage():
     try:
-        
         import Adafruit_ADS1x15
         adc = Adafruit_ADS1x15.ADS1115()
         GAIN = 1
-        value = adc.read_adc(0, gain=GAIN)
-        
-        voltage = value * (4.096 / 32767) * 2
+        val = adc.read_adc(0, gain=GAIN)
+        voltage = val * (4.096 / 32767) * 2
         return round(voltage, 2)
     except Exception as e:
-        print("Errore nella lettura del voltaggio:", e)
-        
+        print("Voltage read error:", e)
         return round(random.uniform(4.5, 5.2), 2)
+
 
 STREAM_URL = 'http://192.168.1.103/stream'
 
 def gen_frames():
     try:
         stream = requests.get(STREAM_URL, stream=True, timeout=10)
-    except requests.exceptions.RequestException as e:
-        print("Errore nella connessione allo stream:", e)
+    except Exception as e:
+        print("Stream connection error:", e)
         return
 
-    bytes_data = b''
+    buffer = b''
     global last_unrecognized_alert, last_recognized_alerts
     for chunk in stream.iter_content(chunk_size=1024):
-        bytes_data += chunk
-        a = bytes_data.find(b'\xff\xd8')
-        b = bytes_data.find(b'\xff\xd9')
-        if a != -1 and b != -1:
-            jpg = bytes_data[a:b+2]
-            bytes_data = bytes_data[b+2:]
+        buffer += chunk
+        start = buffer.find(b'\xff\xd8')
+        end = buffer.find(b'\xff\xd9')
+        if start != -1 and end != -1:
+            jpg = buffer[start:end+2]
+            buffer = buffer[end+2:]
             frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
             if frame is None:
                 continue
 
-            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
-            
-            face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-            
-            current_time = time.time()
-            
-            for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-                matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-                face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-                name = "unknown"
-                if len(face_distances) > 0:
-                    best_match_index = np.argmin(face_distances)
-                    if matches[best_match_index]:
-                        name = known_face_names[best_match_index].upper()
-                
-                if name != "unknown":
-                    last_time = last_recognized_alerts.get(name, 0)
-                    if current_time - last_time > FACE_ALERT_INTERVAL:
-                        send_telegram_alert(f"Riconoscimento faccia: {name}")
-                        last_recognized_alerts[name] = current_time
-                else:
-                    if current_time - last_unrecognized_alert > FACE_ALERT_INTERVAL:
-                        send_telegram_alert("Alert: Faccia non riconosciuta!")
-                        last_unrecognized_alert = current_time
+            small = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+            locs = face_recognition.face_locations(rgb)
+            encs = face_recognition.face_encodings(rgb, locs)
+            now = time.time()
 
-                top, right, bottom, left = top * 4, right * 4, bottom * 4, left * 4
-                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
-                cv2.putText(frame, name, (left + 6, bottom - 6),
-                            cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-            
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame_jpeg = buffer.tobytes()
+            for (top, right, bottom, left), enc in zip(locs, encs):
+                matches = face_recognition.compare_faces(known_face_encodings, enc)
+                dists = face_recognition.face_distance(known_face_encodings, enc)
+                name = "unknown"
+                if dists.size > 0 and matches[np.argmin(dists)]:
+                    name = known_face_names[np.argmin(dists)].upper()
+
+                if name != "unknown":
+                    last = last_recognized_alerts.get(name, 0)
+                    if now - last > FACE_ALERT_INTERVAL:
+                        send_telegram_alert(f"Face recognized: {name}")
+                        last_recognized_alerts[name] = now
+                else:
+                    if now - last_unrecognized_alert > FACE_ALERT_INTERVAL:
+                        send_telegram_alert("Alert: Unrecognized face!")
+                        last_unrecognized_alert = now
+
+                # scale back up for display
+                top, right, bottom, left = map(lambda v: v*4, (top, right, bottom, left))
+                cv2.rectangle(frame, (left, top), (right, bottom), (0,255,0), 2)
+                cv2.rectangle(frame, (left, bottom-35), (right, bottom), (0,255,0), cv2.FILLED)
+                cv2.putText(frame, name, (left+6, bottom-6),
+                            cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255), 2)
+
+            _, jpg = cv2.imencode('.jpg', frame)
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_jpeg + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + jpg.tobytes() + b'\r\n')
+
 
 def token_required(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def wrapped(*args, **kwargs):
         token = session.get('jwt')
         if not token:
             return redirect(url_for('login'))
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = data['username']
-        except Exception as e:
+            user = data['username']
+        except:
             return redirect(url_for('login'))
-        return f(current_user, *args, **kwargs)
-    return decorated
+        return f(user, *args, **kwargs)
+    return wrapped
+
 
 @app.route("/")
 def home():
     return redirect(url_for("login"))
 
-@app.route('/login', methods=['GET', 'POST'])
+
+@app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        if username == 'ismacarbo' and password == PASSWORD:
+        u = request.form.get('username')
+        p = request.form.get('password')
+        if u == 'ismacarbo' and p == PASSWORD:
             token = jwt.encode({
-                'username': username,
+                'username': u,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
             }, app.config['SECRET_KEY'], algorithm="HS256")
             session['jwt'] = token
@@ -202,38 +197,39 @@ def login():
         return render_template('login.html', error="Invalid credentials")
     return render_template('login.html')
 
+
 @app.route('/dashboard')
 @token_required
-def dashboard(current_user):
-    return render_template('dashboard.html', username=current_user)
+def dashboard(user):
+    return render_template('dashboard.html', username=user)
+
 
 @app.route('/weather')
 def weather():
-    return render_template('weather.html',openweather_key=OPENWEATHER_API,windy_key=WINDY_API)
+    return render_template('weather.html', openweather_key=OPENWEATHER_API, windy_key=WINDY_API)
+
 
 @app.route('/portfolio')
 def portfolio():
     return render_template('portfolio.html')
 
+
 @app.route('/api/system', methods=['GET'])
 @token_required
-def system_info(current_user):
+def system_info(user):
     try:
-        temp_output = subprocess.check_output(["vcgencmd", "measure_temp"]).decode()
+        temp_output = subprocess.check_output(["vcgencmd","measure_temp"]).decode()
         cpu_temp = float(temp_output.split('=')[1].split("'")[0])
-    except Exception as e:
+    except:
         cpu_temp = 0.0
-
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
     voltage = get_voltage()
-    
     if cpu_temp > CPU_TEMP_THRESHOLD:
-        send_telegram_alert(f"Alert: CPU temperature is high ({cpu_temp} °C)!")
+        send_telegram_alert(f"Alert: CPU temp high ({cpu_temp} °C)!")
     if voltage < VOLTAGE_THRESHOLD:
-        send_telegram_alert(f"Alert: Batteria/UPS a voltaggio basso ({voltage} V)!")
-
-    data = {
+        send_telegram_alert(f"Alert: Low voltage ({voltage} V)!")
+    return jsonify({
         "cpu_temperature": cpu_temp,
         "memory": {
             "total": mem.total,
@@ -249,81 +245,108 @@ def system_info(current_user):
         },
         "voltage": voltage,
         "power_status": "Online"
-    }
-    return jsonify(data)
+    })
+
 
 @app.route('/api/network', methods=['GET'])
 @token_required
-def network_info(current_user):
-    net_io = psutil.net_io_counters(pernic=True)
-    network_data = {}
-    for iface, stats in net_io.items():
-        network_data[iface] = {
-            "bytes_sent": stats.bytes_sent,
-            "bytes_recv": stats.bytes_recv,
-            "packets_sent": stats.packets_sent,
-            "packets_recv": stats.packets_recv
-        }
-    return jsonify(network_data)
+def network_info(user):
+    counters = psutil.net_io_counters(pernic=True)
+    out = {iface: {
+                "bytes_sent": stats.bytes_sent,
+                "bytes_recv": stats.bytes_recv,
+                "packets_sent": stats.packets_sent,
+                "packets_recv": stats.packets_recv
+            } for iface, stats in counters.items()}
+    return jsonify(out)
+
 
 @app.route('/api/temperature', methods=['GET'])
 def temperature():
-    temp = request.args.get('temp')
-    hum = request.args.get('hum')
-    if temp and hum:
+    t = request.args.get('temp')
+    h = request.args.get('hum')
+    if t and h:
         try:
-            temp_value = float(temp)
-            hum_value = float(hum)
-            print(f"Temperatura ricevuta: {temp_value} °C, Umidità ricevuta: {hum_value} %")
-            return jsonify({"status": "success", "temperature": temp_value, "humidity": hum_value}), 200
-        except ValueError:
-            return jsonify({"status": "error", "message": "Valori non validi"}), 400
-    else:
-        return jsonify({"status": "error", "message": "Parametri mancanti"}), 400
+            tv = float(t)
+            hv = float(h)
+            print(f"Received temp: {tv} °C, hum: {hv} %")
+            return jsonify({"status":"success","temperature":tv,"humidity":hv}),200
+        except:
+            return jsonify({"status":"error","message":"Invalid values"}),400
+    return jsonify({"status":"error","message":"Missing params"}),400
+
 
 @app.route('/api/face', methods=['POST'])
-def face_recognition_api():
-    image_data = request.get_data()
-    if not image_data:
-        return jsonify({"status": "error", "message": "Nessun dato ricevuto"}), 400
-    
-    image_path = "received_face.jpg"
+def face_api():
+    data = request.get_data()
+    if not data:
+        return jsonify({"status":"error","message":"No data"}),400
+    path = "received_face.jpg"
     try:
-        with open(image_path, "wb") as f:
-            f.write(image_data)
+        with open(path,"wb") as f:
+            f.write(data)
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Errore nel salvataggio dell'immagine: {e}"}), 500
-    
-    riconoscimento = process_face(image_path)
-    print(f"Risultato riconoscimento: {riconoscimento}")
-    
-    if riconoscimento != "unknown" and riconoscimento != "Nessuna faccia":
-        send_telegram_alert(f"Riconoscimento faccia (API): {riconoscimento}")
+        return jsonify({"status":"error","message":str(e)}),500
+    result = process_face(path)
+    if result not in ["unknown","No face"]:
+        send_telegram_alert(f"Face recognized (API): {result}")
     else:
-        send_telegram_alert("Alert (API): Faccia non riconosciuta!")
-    
-    return jsonify({"status": "success", "message": "Immagine ricevuta e processata", "riconoscimento": riconoscimento}), 200
+        send_telegram_alert("Alert (API): Unrecognized face!")
+    return jsonify({"status":"success","message":"Processed","recognition":result}),200
+
 
 @app.route('/video_feed')
 @token_required
-def video_feed(current_user):
-    return Response(gen_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+def video_feed(user):
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/stream_face')
 @token_required
-def stream_face(current_user):
+def stream_face(user):
     return """
-    <html>
-      <head>
-        <title>Stream Riconoscimento Facciale</title>
-      </head>
-      <body>
-        <h1>Stream con riconoscimento facciale</h1>
-        <img src="/video_feed" style="width:80%;">
-      </body>
-    </html>
+    <html><head><title>Face Stream</title></head>
+    <body><h1>Facial Recognition Stream</h1>
+    <img src="/video_feed" style="width:80%;">
+    </body></html>
     """
+
+
+@app.route('/api/irrigation_data', methods=['POST'])
+def add_irrigation_data():
+    payload = request.get_json(force=True)
+    try:
+        moisture = float(payload.get('moisture'))
+        light    = float(payload.get('light'))
+    except:
+        return jsonify({"status":"error","message":"Invalid payload"}),400
+
+    timestamp = datetime.datetime.utcnow().isoformat()
+    sensor_records.append({
+        "time": timestamp,
+        "moisture": moisture,
+        "light": light
+    })
+    if len(sensor_records) > MAX_RECORDS:
+        sensor_records.pop(0)
+
+    if moisture < 50:
+        requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": f"💧 Low moisture alert: {moisture:.1f}%"
+            }
+        )
+
+    return jsonify({"status":"success"}),201
+
+
+@app.route('/api/irrigation_data', methods=['GET'])
+@token_required
+def get_irrigation_data(user):
+    return jsonify(sensor_records)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
