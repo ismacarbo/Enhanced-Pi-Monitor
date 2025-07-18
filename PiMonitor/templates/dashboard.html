@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- Inclusione di Chart.js per il grafico -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -39,6 +40,15 @@
                 <p>Visualizza le informazioni meteorologiche aggiornate.</p>
                 <a href="{{ url_for('weather') }}">Vai al Weather</a>
             </section>
+
+            <section id="lidar-heatmap">
+  <h2>Occupancy Grid (Heatmap)</h2>
+  <div style="position:relative; width:100%; height:0; padding-bottom:100%;">
+    <!-- wrapper 1:1 per rendere il canvas quadrato e responsive -->
+    <canvas id="heatmapChart" 
+            style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+  </div>
+</section>
         </div>
     </div>
     
@@ -173,6 +183,95 @@
         fetchSensorData();
         setInterval(fetchSensorData, 5000);
         </script>
+        <script>
+
+        const X_MIN = -50, X_MAX = 50, Y_MIN = -50, Y_MAX = 50, RESOLUTION = 5;
+        const M = Math.ceil((X_MAX - X_MIN) / RESOLUTION);
+        const N = Math.ceil((Y_MAX - Y_MIN) / RESOLUTION);
+
+
+        const matrixSizePlugin = {
+          id: 'matrixSizePlugin',
+          beforeDatasetDraw(chart) {
+            const w = chart.chartArea.right  - chart.chartArea.left;
+            const h = chart.chartArea.bottom - chart.chartArea.top;
+            chart.data.datasets.forEach(ds => {
+              ds.width  = w / M;
+              ds.height = h / N;
+            });
+          }
+        };
+        Chart.register(matrixSizePlugin);
+
+        let heatmapChart = null;
+
+
+        async function fetchHeatmap() {
+          const res = await fetch('/api/occupancy_map.json');
+          const mat = await res.json();
+
+
+          const matrixData = [];
+          for (let i = 0; i < N; i++) {
+            for (let j = 0; j < M; j++) {
+              matrixData.push({
+                x: j,
+                y: i,
+                v: mat[N - 1 - i][j]
+              });
+            }
+          }
+
+          const canvas = document.getElementById('heatmapChart');
+
+          const existing = Chart.getChart(canvas);
+          if (existing) existing.destroy();
+
+
+          heatmapChart = new Chart(canvas.getContext('2d'), {
+            type: 'matrix',
+            data: {
+              datasets: [{
+                label: 'Occupancy',
+                data: matrixData,
+                backgroundColor(ctx) {
+                  const v = ctx.dataset.data[ctx.dataIndex].v;
+                  const r = Math.round(255 * v);
+                  const b = 255 - r;
+                  return `rgba(${r},0,${b},0.8)`;
+                },
+                borderWidth: 0.5,
+                borderColor: 'rgba(255,255,255,0.2)'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { display: false },
+                y: { display: false }
+              },
+              plugins: {
+                legend:  { display: false },
+                tooltip: {
+                  callbacks: {
+                    label(ctx) {
+                      const { x, y, v } = ctx.raw;
+                      const xr = (X_MIN + x * RESOLUTION).toFixed(0);
+                      const yr = (Y_MAX - y * RESOLUTION).toFixed(0);
+                      return `(${xr}, ${yr}) → ${ (v*100).toFixed(1) }%`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+
+        fetchHeatmap();
+        setInterval(fetchHeatmap, 6000);
+    </script>
         
-</body>
+  </body>
 </html>

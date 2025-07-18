@@ -11,10 +11,20 @@ import face_recognition
 import numpy as np
 import os
 from functools import wraps
+import occupancyGrid as og
+import matplotlib.pyplot as plt
 from config import SECRET_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PASSWORD, OPENWEATHER_API, WINDY_API
+
+X_MIN, X_MAX = -50,50
+Y_MIN, Y_MAX = -50,50
+RESOLUTION   = 5
+
+og = og.OccupancyGrid(X_MIN, X_MAX, Y_MIN, Y_MAX, RESOLUTION)
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
+app.url_map.strict_slashes = False
 
 TELEGRAM_BOT_TOKEN = TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID = TELEGRAM_CHAT_ID
@@ -34,6 +44,7 @@ last_unrecognized_alert = 0
 KNOWN_FACES_DIR = "known_faces"
 known_face_encodings = []
 known_face_names = []
+lidarData=[]
 
 def load_known_faces(directory):
     if not os.path.exists(directory):
@@ -346,6 +357,26 @@ def add_irrigation_data():
 @token_required
 def get_irrigation_data(user):
     return jsonify(sensor_records)
+
+@app.route('/api/lidarDatas', methods=['POST'])
+def getLidarDatas():
+    data = request.get_json(force=True)
+    points = data.get('points', [])
+
+    
+    scan = [(np.deg2rad(pt['angle']), pt['distance']) for pt in points]
+
+    
+    robot_pose = (0.0, 0.0, 0.0)
+
+    og.inverse_sensor_update(robot_pose, scan)
+    og.clampLogOdds()
+    print(f"payload LiDAR received: {data}")
+    return jsonify({"status": "received", "received": data}), 201
+
+@app.route('/api/occupancy_map.json')
+def occupancy_map_json():
+    return jsonify(og.getProbabilityMap().tolist())
 
 
 if __name__ == '__main__':
