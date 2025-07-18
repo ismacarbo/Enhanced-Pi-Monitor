@@ -6,8 +6,8 @@
 #define SOIL_PIN 34
 #define RELAY_PIN 25
 
-const char* ssid="Telecom casa_EXT";
-const char* password="40166575";
+const char* ssid="";
+const char* password="";
 const char* server="https://ismaelecarbo.duckdns.org";
 
 BH1750 lightMeter;
