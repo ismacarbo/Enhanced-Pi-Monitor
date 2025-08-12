@@ -14,6 +14,13 @@ from functools import wraps
 import occupancyGrid as og
 import matplotlib.pyplot as plt
 from config import SECRET_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PASSWORD, OPENWEATHER_API, WINDY_API
+import threading, time, subprocess, serial
+
+PORT = "/dev/ttyACM1" 
+BAUD=115200
+TEMP_ON = 50.0
+TEMP_OFF = 45.0
+
 
 X_MIN, X_MAX = -50,50
 Y_MIN, Y_MAX = -50,50
@@ -229,10 +236,11 @@ def portfolio():
 @token_required
 def system_info(user):
     try:
-        temp_output = subprocess.check_output(["vcgencmd","measure_temp"]).decode()
-        cpu_temp = float(temp_output.split('=')[1].split("'")[0])
+        cpu_temp = get_temp_c()
+        print(cpu_temp)
     except:
         cpu_temp = 0.0
+        print(cpu_temp)
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
     voltage = get_voltage()
@@ -378,6 +386,50 @@ def getLidarDatas():
 def occupancy_map_json():
     return jsonify(og.getProbabilityMap().tolist())
 
+def get_temp_c():
+    """Read Raspberry Pi CPU temperature in °C with fallback."""
+    try:
+        out = subprocess.check_output(["/usr/bin/vcgencmd", "measure_temp"]).decode()
+        return float(out.split('=')[1].split("'")[0])
+    except Exception as e:
+        print(f"[fan] Error reading vcgencmd: {e}. Trying sysfs...", flush=True)
+        try:
+            with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                return float(f.read().strip()) / 1000.0
+        except Exception as e2:
+            print(f"[fan] Error reading sysfs temp: {e2}", flush=True)
+            return 0.0
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+def checkTemp():
+    """Thread that controls the fan based on CPU temperature."""
+    while True:
+        try:
+            print(f"[fan] Opening serial on {PORT}...", flush=True)
+            with serial.Serial(PORT, BAUD, timeout=1) as ser:
+                print("[fan] Serial port opened successfully", flush=True)
+                fan_on = False
+
+                while True:
+                    t = get_temp_c()
+                    print(f"[fan] loop, T={t:.1f}", flush=True)
+
+                    if t >= TEMP_ON:
+                        ser.write(b"ON 200\n")  # PWM ~80%
+                        if not fan_on:
+                            fan_on = True
+                            print(f"[fan] Fan ON (T={t:.1f}°C)", flush=True)
+
+                    elif t < TEMP_OFF and fan_on:
+                        ser.write(b"OFF\n")
+                        fan_on = False
+                        print(f"[fan] Fan OFF (T={t:.1f}°C)", flush=True)
+
+                    time.sleep(2)
+
+        except Exception as e:
+            print(f"[fan] Serial error: {e}, retrying in 3s", flush=True)
+            time.sleep(3)
+
+if __name__ == "__main__":
+    threading.Thread(target=checkTemp, daemon=True).start()
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
