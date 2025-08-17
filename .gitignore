@@ -1,22 +1,68 @@
-# Python & Flask
+
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
 *.log
 *.sqlite3
 *.env
+*.pem
+*.key
+instance/
+tmp/
+logs/
+nohup.out
 
-# Virtual environments
+
+build/
+dist/
+pip-wheel-metadata/
+
+
 venv/
 env/
-PiMonitor/known_faces/
+.venv/
+ENV/
+
+
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+
+runs/
+
+
+*.caffemodel
+*.prototxt
+*.pb
+*.pbtxt
+*.onnx
+*.tflite
+*.pt
+*.bin
+*.xml
+
+
+PiMonitor/known_faces/*
+!PiMonitor/known_faces/.gitkeep
+
+PiMonitor/models/*
+!PiMonitor/models/.gitkeep
+!PiMonitor/models/README.md
+
+
+
+yolov8n.pt
+
+
 PiMonitor/config.py
 
-# IDEs e editor
+
 .vscode/
 .idea/
 
-# Sistema operativo
-.DS_Store
 
+.DS_Store
+Thumbs.db
