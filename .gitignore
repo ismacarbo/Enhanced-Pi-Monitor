@@ -51,7 +51,9 @@ PiMonitor/known_faces/*
 PiMonitor/models/*
 !PiMonitor/models/.gitkeep
 !PiMonitor/models/README.md
-
+autoIrrigation.jpg
+robot.jpg
+templates/marker1.jpg
 
 
 yolov8n.pt

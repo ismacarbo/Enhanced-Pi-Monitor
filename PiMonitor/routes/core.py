@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, Response
+from flask import app, render_template, redirect, url_for, Response
 from auth import token_required
 from stream.mjpeg import gen_frames
 
@@ -64,3 +64,15 @@ def register_core_routes(app):
         <img src="/video_feed" style="width:80%;">
         </body></html>
         """
+    
+    @app.route('/projects')
+    def projects():
+        return render_template('projects.html')
+
+    @app.route('/projects/robot')
+    def project_robot():
+        return render_template('projects/projectRobot.html')
+
+    @app.route('/projects/iot')
+    def project_iot():
+        return render_template('projects/projectsIot.html')

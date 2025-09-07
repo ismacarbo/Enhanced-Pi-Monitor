@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IoT Auto Irrigation System • Ismaele Carbonari</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="/portfolio#home">Home</a></li>
+            <li><a href="/portfolio#about">About Me</a></li>
+            <li><a href="/portfolio#skills">Skills</a></li>
+            <li class="active"><a href="/projects">Projects</a></li>
+            <li><a href="/portfolio#work">Work</a></li>
+            <li><a href="/portfolio#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section>
+        <div class="back"><a href="/projects">← Back to Projects</a></div>
+        <h2 class="section-title">IoT Auto Irrigation System</h2>
+
+        <div class="content">
+            <p>
+                A compact, reliable drip controller that waters plants in <em>small, repeatable pulses</em> instead of
+                occasional floods. An <strong>ESP32</strong> reads a capacitive <strong>soil moisture probe</strong> and
+                a
+                <strong>BH1750 light sensor</strong>, then decides when to drive a pump through a
+                <strong>relay</strong>.
+                Data is sent to my backend for telemetry and alerts. The aim is a system that is simple to operate,
+                gentle on
+                plants, and easy to tune as conditions change.
+            </p>
+
+            <h3>Hardware</h3>
+            <ul>
+                <li><strong>Controller:</strong> ESP32 for sensing, logic and Wi-Fi connectivity.</li>
+                <li><strong>Sensors:</strong> capacitive soil probe for moisture; BH1750 over I²C for ambient light.
+                </li>
+                <li><strong>Actuation:</strong> relay module switching a small diaphragm pump for precise micro-doses.
+                </li>
+                <li><strong>Power & plumbing:</strong> separate supply for the pump, common ground, drip tubing to the
+                    pot.</li>
+            </ul>
+
+            <h3>How it behaves</h3>
+            <p>
+                The controller continuously reads moisture and light, smooths the readings, and applies two simple
+                ideas:
+                a <strong>hysteresis</strong> on soil moisture (start watering below a “dry” threshold, stop after
+                reaching a
+                “wet” threshold) and a <strong>light guardrail</strong> that blocks watering under strong sun to avoid
+                waste.
+                Water is delivered as <strong>micro-doses</strong> separated by soak periods, so moisture can propagate
+                in the
+                soil before the next decision. A lightweight rate limit caps the total number of doses within a time
+                window to
+                prevent over-watering.
+            </p>
+
+            <h3>Control strategy</h3>
+            <ul>
+                <li><strong>Moisture hysteresis:</strong> two thresholds to avoid on–off chatter and keep the plant in a
+                    healthy band.</li>
+                <li><strong>Light-aware logic:</strong> skip irrigation when lux is high (midday sun), resume when light
+                    drops.</li>
+                <li><strong>Micro-dosing:</strong> short pump pulses followed by a soak period; this reduces runoff and
+                    evens out absorption.</li>
+                <li><strong>Rate limit:</strong> a rolling window caps the maximum number of doses—useful for hot days
+                    or sensor noise.</li>
+            </ul>
+
+            <h3>Telemetry & backend</h3>
+            <p>
+                Each cycle, the node publishes moisture and lux to my server. A short history is kept for quick
+                inspection,
+                and low-moisture events can trigger notifications. This makes it easy to validate thresholds, spot
+                sensor drift,
+                and correlate watering with room conditions.
+            </p>
+
+            <h3>Installation notes</h3>
+            <ul>
+                <li><strong>Probe placement:</strong> mid-depth, away from the dripper, so readings reflect the pot—not
+                    only the wet spot.</li>
+                <li><strong>Calibration:</strong> take a “dry” and a “fully wet” reference for your specific soil to
+                    scale moisture properly.</li>
+                <li><strong>Wiring & safety:</strong> keep the relay default to pump-off, separate the pump’s supply,
+                    and protect against splashes.</li>
+                <li><strong>Tuning:</strong> start with conservative thresholds and increase dose duration only if
+                    moisture rises too slowly.</li>
+            </ul>
+
+            <h3>What I learned</h3>
+            <ul>
+                <li>Short, spaced pulses keep soil moisture more stable than long watering cycles.</li>
+                <li>A simple lux threshold prevents a lot of wasted water at midday.</li>
+                <li>Per-plant calibration matters—different soils and pot sizes change the “feel” of the readings.</li>
+            </ul>
+
+            <h3>Next steps</h3>
+            <ul>
+                <li>One-button dry/wet calibration stored on the device.</li>
+                <li>Historical charts and pump event overlays on the web UI.</li>
+                <li>Tank level sensing and low-water alerts.</li>
+            </ul>
+
+            <h3>Gallery</h3>
+            <div class="media-grid">
+                <figure>
+                    <div class="media ar-4x3">
+                        <img src="{{ url_for('static', filename='img/autoIrrigation.jpg') }}"
+                            alt="ESP32 controller with relay and light sensor" loading="lazy">
+                    </div>
+                    <figcaption>ESP32 controller, relay module and BH1750 for ambient light.</figcaption>
+                </figure>
+            </div>
+            <h3>Links</h3>
+            <ul>
+                <li><a href="https://github.com/ismacarbo" target="_blank" style="color:#f7ca18;">Code & notes
+                        (GitHub)</a></li>
+                <li><a href="/projects" style="color:#f7ca18;">Back to Projects</a></li>
+            </ul>
+        </div>
+    </section>
+</body>
+
+</html>

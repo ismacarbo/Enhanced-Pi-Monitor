@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous Robot Platform - Ismaele Carbonari</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+</head>
+
+<body>
+  <nav>
+    <ul>
+      <li><a href="/portfolio#home">Home</a></li>
+      <li><a href="/portfolio#about">About Me</a></li>
+      <li><a href="/portfolio#skills">Skills</a></li>
+      <li class="active"><a href="/projects">Projects</a></li>
+      <li><a href="/portfolio#work">Work</a></li>
+      <li><a href="/portfolio#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <section>
+    <div class="back"><a href="/projects">← Back to Projects</a></div>
+    <h2 class="section-title">Autonomous Robot Platform</h2>
+
+    <div class="content">
+      <p>
+        A small ground robot I use to explore end-to-end robotics: from motor control and embedded sensing on
+        <strong>Arduino</strong>, up to mapping and visualization on a <strong>Raspberry Pi</strong>.
+        The goal is a clean stack I can iterate on quickly: simple, observable, and hackable.
+      </p>
+
+      <h3>Hardware</h3>
+      <ul>
+        <li><strong>Locomotion:</strong> DC motors via TB6612 driver</li>
+        <li><strong>Sensing:</strong> scanning <strong>HC-SR04</strong> (on micro-servo), two <strong>HW-201</strong>
+          IR,
+          <strong>MPU6050</strong> IMU for yaw
+        </li>
+        <li><strong>Compute:</strong> Arduino (low-level loop) + Raspberry Pi (Python, mapping & dashboard)</li>
+      </ul>
+
+      <h3>Behavior</h3>
+      <p>
+        The Arduino runs a tiny state machine for obstacle avoidance (<em>RUN / EMERG_BACK / EMERG_TURN</em>)
+        and streams compact <em>STAT</em> telemetry at 10 Hz. The Pi listens, estimates a rough pose from PWM+IMU,
+        processes LiDAR scans, and maintains a <strong>rolling occupancy grid</strong>—a crisp, “what’s around me now”
+        map ideal for debugging.
+      </p>
+
+      <h3>Software layout</h3>
+      <ul>
+        <li><strong>Serial thread:</strong> parses Arduino telemetry, keeps shared state, integrates odometry</li>
+        <li><strong>LiDAR thread:</strong> full turns → world points → rolling occupancy update (free along ray, hit =
+          occupied)</li>
+        <li><strong>Dashboard:</strong> Pygame, showing grid crop + last scan overlay + HUD (sonar, IR, IMU, PWM)</li>
+      </ul>
+
+      <h3>Notes & next steps</h3>
+      <ul>
+        <li>Add wheel encoders and fuse them with IMU (complementary/EKF)</li>
+        <li>Light ICP on downsampled scans to reduce drift; later a small pose-graph</li>
+        <li>Expose LiDAR extrinsics (x, y, yaw) for easy calibration</li>
+      </ul>
+
+      <h3>Gallery</h3>
+      <div class="media-grid">
+        <figure>
+          <div class="media ar-1x">
+            <img src="{{ url_for('static', filename='img/robot.jpg') }}" alt="Chassis & wiring" loading="lazy">
+          </div>
+          <figcaption>Chassis & wiring during early tests.</figcaption>
+        </figure>
+      </div>
+
+      <h3>Links</h3>
+      <ul>
+        <li><a href="https://github.com/ismacarbo" target="_blank" style="color:#f7ca18;">Code & notes (GitHub)</a></li>
+        <li><a href="/projects" style="color:#f7ca18;">Back to Projects</a></li>
+      </ul>
+    </div>
+  </section>
+</body>
+
+</html>
