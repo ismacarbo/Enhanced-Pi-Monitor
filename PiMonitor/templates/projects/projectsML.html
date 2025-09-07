@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Machine Learning & AI - Ismaele Carbonari</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="/portfolio#home">Home</a></li>
+            <li><a href="/portfolio#about">About Me</a></li>
+            <li><a href="/portfolio#skills">Skills</a></li>
+            <li class="active"><a href="/projects">Projects</a></li>
+            <li><a href="/portfolio#work">Work</a></li>
+            <li><a href="/portfolio#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section>
+        <div class="back"><a href="/portfolio">← Back to Portfolio</a></div>
+        <h2 class="section-title">Machine Learning & AI</h2>
+
+        <div class="content">
+            <p>
+                This page gathers a couple of compact ML experiments I’ve been building to learn, prototype fast, and
+                ship small tools
+                that are fun to use. The focus is pragmatic: clean data pipelines, sensible baselines, and models that
+                are easy to
+                deploy locally—no cloud dependency and full control over the stack.
+            </p>
+
+            
+            <h3>DrawingNeuralNetwork — draw, classify, iterate</h3>
+            <p>
+                A lightweight drawing app where you can sketch digits/objects and get a prediction in real time. I use
+                it as a
+                playground to test preprocessing tricks, training loops, and evaluation without the friction of a big
+                framework.
+                The UI is intentionally minimal so the iteration loop is fast: draw → classify → tweak → repeat.
+            </p>
+            <ul>
+                <li><strong>Goal:</strong> make live inference tangible and debuggable; turn model behavior into
+                    immediate feedback.</li>
+                <li><strong>Pipeline:</strong> canvas image → normalization & denoise → resize → tensorize → model
+                    inference → top-k output.</li>
+                <li><strong>Models:</strong> compact CNN baselines (PyTorch) trained on standard datasets (e.g., MNIST /
+                    CIFAR-10) with simple
+                    augmentations (shift/rotate/contrast).</li>
+                <li><strong>Why it’s useful:</strong> you can “feel” when preprocessing or augmentation helps because
+                    the effect shows up while you draw.</li>
+            </ul>
+            <p>
+                Over time I’ve collected small insights: centering and scale normalization matter more than fancy layers
+                for hand-drawn input;
+                a conservative denoise helps low-confidence strokes; and top-k with probabilities is better UX than a
+                single hard label.
+            </p>
+
+            <h3>FaceRecognition — local, real-time identification</h3>
+            <p>
+                A real-time face recognition demo built on top of OpenCV. It detects faces from a webcam stream and
+                performs
+                on-device identification using a small, interpretable pipeline—useful for kiosks, lab setups, or home
+                experiments.
+            </p>
+            <ul>
+                <li><strong>Detector:</strong> efficient OpenCV detector for real-time performance on CPU.</li>
+                <li><strong>Recognition:</strong> per-user enrollments and a compact descriptor for similarity matching
+                    (no external services).</li>
+                <li><strong>Data flow:</strong> capture → detect → align/crop → embed/describe → nearest match with
+                    threshold & unknown handling.</li>
+                <li><strong>Why local:</strong> privacy and latency; it runs fully offline and is easy to integrate with
+                    other
+                    processes (e.g., doors, dashboards).</li>
+            </ul>
+            <p>
+                In practice, good lighting and enrollment variety (frontal + slight yaw, with/without glasses) make the
+                system robust.
+                Threshold tuning is key to balance false accepts vs rejects; for multi-user scenarios, I log confidence
+                to review edge cases.
+            </p>
+
+            <h3>What I learned</h3>
+            <ul>
+                <li><strong>Feedback beats theory:</strong> interactive demos (drawing/preview) surface issues faster
+                    than offline metrics alone.</li>
+                <li><strong>Preprocessing > depth (often):</strong> consistent sizing, centering, and contrast
+                    adjustments usually yield bigger gains than adding layers.</li>
+                <li><strong>Explainability helps adoption:</strong> surfacing top-k and similarity scores builds trust
+                    and makes debugging easier.</li>
+            </ul>
+
+            <h3>Next steps</h3>
+            <ul>
+                <li>Add a tiny quantized model for the drawing app to compare FP32 vs INT8 on low-power hardware.</li>
+                <li>Swap the face detector with a modern lightweight DNN and expose a calibration page for
+                    enrollment/thresholds.</li>
+                <li>Bundle both apps with a simple REST API, so other services (e.g., the robot dashboard) can request
+                    predictions.</li>
+            </ul>
+
+            <h3>Gallery</h3>
+            <div class="media-grid">
+               
+                <figure>
+                    <div class="media ar-4x3">
+                        <img src="{{ url_for('static', filename='img/ml_drawing_app.jpg') }}"
+                            alt="Drawing app classification" loading="lazy">
+                    </div>
+                    <figcaption>Live sketch classification with top-k probabilities.</figcaption>
+                </figure>
+                
+                <figure>
+                    <div class="media ar-4x3">
+                        <img src="{{ url_for('static', filename='img/ml_face_demo.jpg') }}" alt="Face recognition demo"
+                            loading="lazy">
+                    </div>
+                    <figcaption>Real-time detection and identification on CPU.</figcaption>
+                </figure>
+            </div>
+
+            <h3>Links</h3>
+            <ul>
+                <li><a href="https://github.com/ismacarbo/DrawingNeuralNetwork" target="_blank"
+                        style="color:#f7ca18;">DrawingNeuralNetwork (GitHub)</a></li>
+                <li><a href="https://github.com/ismacarbo/FaceRecognition" target="_blank"
+                        style="color:#f7ca18;">FaceRecognition (GitHub)</a></li>
+                <li><a href="/portfolio" style="color:#f7ca18;">Back to Portfolio</a></li>
+            </ul>
+        </div>
+    </section>
+</body>
+
+</html>

@@ -64,11 +64,6 @@ def register_core_routes(app):
         <img src="/video_feed" style="width:80%;">
         </body></html>
         """
-    
-    @app.route('/projects')
-    def projects():
-        return render_template('projects.html')
-
     @app.route('/projects/robot')
     def project_robot():
         return render_template('projects/projectRobot.html')
@@ -76,3 +71,8 @@ def register_core_routes(app):
     @app.route('/projects/iot')
     def project_iot():
         return render_template('projects/projectsIot.html')
+
+
+    @app.route('/projects/machine_learning')
+    def project_ml():
+        return render_template('projects/projectsML.html')
