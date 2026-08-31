@@ -29,7 +29,9 @@ class WikiRouteTests(unittest.TestCase):
         self.app.config.update(
             TESTING=True,
             SECRET_KEY=TEST_SECRET,
-            WIKIJS_URL="http://100.84.201.48:3000",
+            WIKIJS_URL="https://wiki.example.invalid",
+            WIKIJS_AUTH_COOKIE_DOMAIN=None,
+            WIKIJS_AUTH_TTL_SECONDS=300,
         )
 
         @self.app.route("/login")
@@ -63,7 +65,21 @@ class WikiRouteTests(unittest.TestCase):
         response = self.client.get("/wiki")
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers["Location"], "http://100.84.201.48:3000")
+        self.assertEqual(response.headers["Location"], "https://wiki.example.invalid")
+        cookie = response.headers["Set-Cookie"]
+        self.assertIn("pimonitor_wiki_access=", cookie)
+        self.assertIn("Secure", cookie)
+        self.assertIn("HttpOnly", cookie)
+        self.assertIn("SameSite=Lax", cookie)
+
+    def test_nginx_auth_endpoint_requires_valid_launcher_cookie(self):
+        self.assertEqual(self.client.get("/internal/auth/wiki").status_code, 401)
+        self.authenticate()
+        self.client.get("/wiki")
+
+        response = self.client.get("/internal/auth/wiki")
+
+        self.assertEqual(response.status_code, 204)
 
     def test_missing_configuration_returns_service_unavailable(self):
         self.app.config["WIKIJS_URL"] = None

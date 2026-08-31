@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from config import SECRET_KEY
 from knowledge.sources.wikijs import WikiJSConfig, WikiJSConfigurationError
@@ -10,6 +12,20 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = SECRET_KEY
     app.url_map.strict_slashes = False
+
+    app.config['WIKIJS_AUTH_COOKIE_DOMAIN'] = (
+        os.environ.get('WIKIJS_AUTH_COOKIE_DOMAIN', '').strip() or None
+    )
+    try:
+        wiki_auth_ttl = int(os.environ.get('WIKIJS_AUTH_TTL_SECONDS', '1800'))
+        if wiki_auth_ttl <= 0:
+            raise ValueError
+    except ValueError:
+        app.logger.warning(
+            "Ignoring invalid WIKIJS_AUTH_TTL_SECONDS; using 1800 seconds"
+        )
+        wiki_auth_ttl = 1800
+    app.config['WIKIJS_AUTH_TTL_SECONDS'] = wiki_auth_ttl
 
     try:
         app.config['WIKIJS_URL'] = WikiJSConfig.from_env().base_url

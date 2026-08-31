@@ -79,6 +79,8 @@ The Compose `.env` is only for infrastructure. The Flask process and exporter re
 | `WIKIJS_API_TOKEN` | only for backend extraction | Bearer token; never passed to a template or browser |
 | `WIKIJS_LOCALE` | no | Locale queried by the source, default `en` |
 | `WIKIJS_TIMEOUT_SECONDS` | no | GraphQL request timeout, default `10` |
+| `WIKIJS_AUTH_COOKIE_DOMAIN` | public sibling subdomain only | Shared parent domain, for example `.example.com` |
+| `WIKIJS_AUTH_TTL_SECONDS` | no | Lifetime of the nginx access cookie, default `1800` |
 
 Copy the repository `.env.example` if useful, then export it in the service environment. The application deliberately does not auto-load dotenv files. For systemd, an appropriate pattern is an owner-readable `EnvironmentFile` plus:
 
@@ -87,7 +89,7 @@ Environment="WIKIJS_URL=https://wiki.your-domain.example"
 EnvironmentFile=/path/outside/git/pimonitor.env
 ```
 
-When `WIKIJS_URL` is missing or invalid, Flask starts without Wiki integration and the dashboard card remains hidden. When configured, the card uses the JWT-protected `/wiki` route before redirecting to Wiki.js; no link is shown in the public portfolio. Wiki.js retains its own authentication boundary. `WIKIJS_API_TOKEN` is not present in Flask template context.
+When `WIKIJS_URL` is missing or invalid, Flask starts without Wiki integration and the dashboard card remains hidden. When configured, the card uses the JWT-protected `/wiki` route to issue a short-lived, HTTP-only access cookie before redirecting to Wiki.js; no link is shown in the public portfolio. The nginx `auth_request` configuration validates that cookie on every Wiki.js request, and Wiki.js retains its own authentication boundary. `WIKIJS_API_TOKEN` is not present in Flask template context.
 
 ## Enable the Wiki.js API
 
@@ -130,7 +132,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-Replace the reserved `wiki.example.invalid` placeholder with a real hostname you control, point DNS at the server, then use the host's existing Certbot workflow to add TLS. Set Wiki.js's site URL and `WIKIJS_URL` to the resulting `https://...` origin. Keep the Compose bind address on loopback when nginx is on the host.
+Replace the reserved hostnames in the nginx example with real hostnames you control, point DNS or the existing tunnel at the server, and enable TLS. Set Wiki.js's site URL and `WIKIJS_URL` to the resulting `https://...` origin. Set `WIKIJS_AUTH_COOKIE_DOMAIN` to their shared parent domain so the protected Flask launcher can grant access to the Wiki hostname. Keep the Compose bind address on loopback when nginx is on the host.
 
 If no hostname exists yet, direct LAN/Tailscale access on `http://SERVER_IP:3000` is supported. Production access over the public internet should use HTTPS.
 
