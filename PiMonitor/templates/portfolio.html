@@ -35,6 +35,10 @@
       <p style="margin-top:0.5rem; font-size:0.95rem; opacity:0.9;">
         Featured endpoint: <a href="https://ismacarbo.com/weather" target="_blank" style="color:#f7ca18;">/weather</a>
         (live weather data)
+        {% if wikijs_url %}
+        &nbsp;|&nbsp;
+        <a href="{{ wikijs_url }}" target="_blank" rel="noopener noreferrer" style="color:#f7ca18;">Knowledge Base</a>
+        {% endif %}
       </p>
     </div>
   </section>

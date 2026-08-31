@@ -1,0 +1,62 @@
+name: enhanced-pi-monitor-wikijs
+
+services:
+  wikijs-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${WIKIJS_DB_NAME:-wikijs}
+      POSTGRES_USER: ${WIKIJS_DB_USER:-wikijs}
+      POSTGRES_PASSWORD: ${WIKIJS_DB_PASSWORD:?Set WIKIJS_DB_PASSWORD in infrastructure/wikijs/.env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - wikijs-db-data:/var/lib/postgresql/data
+    networks:
+      - wikijs-backend
+
+  wikijs:
+    image: ${WIKIJS_IMAGE:-ghcr.io/requarks/wiki:2.5.314}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      wikijs-db:
+        condition: service_healthy
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wikijs-db
+      DB_PORT: 5432
+      DB_USER: ${WIKIJS_DB_USER:-wikijs}
+      DB_PASS: ${WIKIJS_DB_PASSWORD:?Set WIKIJS_DB_PASSWORD in infrastructure/wikijs/.env}
+      DB_NAME: ${WIKIJS_DB_NAME:-wikijs}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${WIKIJS_BIND_ADDRESS:-127.0.0.1}:${WIKIJS_PORT:-3000}:3000"
+    volumes:
+      - wikijs-content:/wiki/data/content
+    networks:
+      - wikijs-frontend
+      - wikijs-backend
+
+networks:
+  wikijs-frontend:
+  wikijs-backend:
+    internal: true
+
+volumes:
+  wikijs-db-data:
+  wikijs-content:

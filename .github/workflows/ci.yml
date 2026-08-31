@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install existing Flask requirements
+        run: python -m pip install --disable-pip-version-check -r PiMonitor/requirements.txt
+
+      - name: Run knowledge unit tests
+        run: python -m unittest discover -s PiMonitor/tests -v
+
+      - name: Compile Python sources
+        run: python -m compileall -q PiMonitor scripts
+
+      - name: Compile Jinja templates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from jinja2 import Environment, FileSystemLoader
+
+          root = Path("PiMonitor/templates")
+          environment = Environment(loader=FileSystemLoader(str(root)))
+          templates = sorted(
+              str(path.relative_to(root)) for path in root.rglob("*.html")
+          )
+          for template in templates:
+              environment.get_template(template)
+          print(f"Compiled {len(templates)} Jinja templates")
+          PY
+
+      - name: Validate administration scripts
+        run: sh -n infrastructure/wikijs/scripts/backup.sh infrastructure/wikijs/scripts/restore.sh
+
+      - name: Validate Wiki.js Compose model
+        env:
+          WIKIJS_DB_PASSWORD: github-actions-validation-only
+        run: >-
+          docker compose
+          --project-directory infrastructure/wikijs
+          --env-file infrastructure/wikijs/.env.example
+          -f infrastructure/wikijs/docker-compose.yml
+          config --quiet
+
+      - name: Check Git whitespace
+        run: git diff --check HEAD

@@ -26,6 +26,7 @@ ENV/
 
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 .coverage
 coverage.xml
 htmlcov/
@@ -60,6 +61,14 @@ yolov8n.pt
 
 
 PiMonitor/config.py
+
+
+# Wiki.js local configuration, backups, and generated knowledge exports
+infrastructure/wikijs/.env
+sshKey.txt
+backups/wikijs/
+data/wiki_export*.jsonl
+data/wiki_exports/
 
 
 .vscode/

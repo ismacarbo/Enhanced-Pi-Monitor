@@ -1,0 +1,16 @@
+"""Example configuration expected by the existing Flask application.
+
+Copy this file to ``config.py`` (which is ignored by Git), or adapt an existing
+local config. Wiki.js settings are separate environment variables and do not
+belong in this module.
+"""
+
+import os
+
+
+SECRET_KEY = os.environ["FLASK_SECRET_KEY"]
+PASSWORD = os.environ["PIMONITOR_PASSWORD"]
+OPENWEATHER_API = os.environ.get("OPENWEATHER_API", "")
+WINDY_API = os.environ.get("WINDY_API", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")

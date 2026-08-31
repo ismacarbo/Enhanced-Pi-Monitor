@@ -1,5 +1,6 @@
 from flask import Flask
 from config import SECRET_KEY
+from knowledge.sources.wikijs import WikiJSConfig, WikiJSConfigurationError
 from routes.core import register_core_routes
 from routes.api import register_api_routes
 from utils.sensors import start_fan_thread
@@ -8,6 +9,17 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = SECRET_KEY
     app.url_map.strict_slashes = False
+
+    try:
+        app.config['WIKIJS_URL'] = WikiJSConfig.from_env().base_url
+    except WikiJSConfigurationError as exc:
+        app.logger.warning("Ignoring invalid optional Wiki.js configuration: %s", exc)
+        app.config['WIKIJS_URL'] = None
+
+    @app.context_processor
+    def inject_optional_services():
+        # Only the public base URL is exposed. WIKIJS_API_TOKEN remains backend-only.
+        return {'wikijs_url': app.config.get('WIKIJS_URL')}
 
     
     register_core_routes(app)
