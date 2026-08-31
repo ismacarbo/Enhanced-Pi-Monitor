@@ -3,6 +3,7 @@ from config import SECRET_KEY
 from knowledge.sources.wikijs import WikiJSConfig, WikiJSConfigurationError
 from routes.core import register_core_routes
 from routes.api import register_api_routes
+from routes.wiki import register_wiki_routes
 from utils.sensors import start_fan_thread
 
 def create_app():
@@ -24,6 +25,7 @@ def create_app():
     
     register_core_routes(app)
     register_api_routes(app)
+    register_wiki_routes(app)
 
     return app
 

@@ -87,7 +87,7 @@ Environment="WIKIJS_URL=https://wiki.your-domain.example"
 EnvironmentFile=/path/outside/git/pimonitor.env
 ```
 
-When `WIKIJS_URL` is missing or invalid, Flask starts without Wiki integration and the optional portfolio/dashboard links remain hidden. `WIKIJS_API_TOKEN` is not present in Flask template context.
+When `WIKIJS_URL` is missing or invalid, Flask starts without Wiki integration and the dashboard card remains hidden. When configured, the card uses the JWT-protected `/wiki` route before redirecting to Wiki.js; no link is shown in the public portfolio. Wiki.js retains its own authentication boundary. `WIKIJS_API_TOKEN` is not present in Flask template context.
 
 ## Enable the Wiki.js API
 

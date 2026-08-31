@@ -43,8 +43,8 @@
             {% if wikijs_url %}
             <section id="wikijs-card" class="link-card">
                 <h2>Knowledge Base</h2>
-                <p>Apri la knowledge base personale in Wiki.js.</p>
-                <a href="{{ wikijs_url }}" target="_blank" rel="noopener noreferrer">Vai alla Wiki</a>
+                <p>Apri la knowledge base personale tramite l'area autenticata.</p>
+                <a href="{{ url_for('wiki') }}" target="_blank" rel="noopener noreferrer">Vai alla Wiki</a>
             </section>
             {% endif %}
 

@@ -131,7 +131,7 @@ make wiki-status
 
 Open `http://127.0.0.1:3000` on the server for first-time setup. PostgreSQL is not exposed on a host port. For LAN/Tailscale access and the recommended HTTPS subdomain setup, see [`infrastructure/wikijs/README.md`](infrastructure/wikijs/README.md).
 
-Set `WIKIJS_URL` in the Flask process environment to show a Knowledge Base link in the existing portfolio and dashboard. Set `WIKIJS_API_TOKEN` only in the backend environment when extraction is needed; it is never sent to templates.
+Set `WIKIJS_URL` in the Flask process environment to enable the Knowledge Base card in the authenticated dashboard. The card opens the JWT-protected `/wiki` launcher, which redirects to Wiki.js; the public portfolio does not expose the link. Set `WIKIJS_API_TOKEN` only in the backend environment when extraction is needed; it is never sent to templates.
 
 Administration and backups:
 ---------------------------
