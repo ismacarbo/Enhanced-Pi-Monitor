@@ -28,6 +28,8 @@ Implemented Features:
   - Disk usage
   - Power status (mocked)
   - Energy consumption (simulated value)  
+- Authenticated GDP deployment card with systemd and MQTT broker health.
+- Read-only `/api/services/gdp` endpoint; no start/stop controls are exposed.
 - Auto-refreshing charts using Chart.js.
 
 🌐 NETWORK MONITORING  

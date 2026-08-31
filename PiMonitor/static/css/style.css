@@ -221,3 +221,73 @@ nav li.slide {
   border-radius: 5px;
   color: #efefef;
 }
+
+.service-status-card {
+  border: 1px solid #2c2c2c;
+}
+
+.service-status-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.service-status-heading h2 {
+  margin: 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-loading {
+  background: #3a3a3a;
+  color: #efefef;
+}
+
+.status-online {
+  background: #163d29;
+  color: #76e6a5;
+}
+
+.status-offline {
+  background: #4a2020;
+  color: #ff9898;
+}
+
+.service-status-list {
+  margin: 18px 0 0;
+}
+
+.service-status-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.service-status-list dt {
+  color: #a9a9a9;
+}
+
+.service-status-list dd {
+  margin: 0;
+  text-align: right;
+  font-family: monospace;
+}
+
+.service-status-detail {
+  min-height: 1.2em;
+  margin: 12px 0 0;
+  color: #9a9a9a;
+  font-size: 0.82rem;
+}

@@ -27,7 +27,28 @@
             <section id="sensor-graph">
                 <h2>Irrigation Data</h2>
                 <canvas id="sensorChart"></canvas>
-              </section>
+            </section>
+            <section id="gdp-service-card" class="service-status-card" aria-live="polite">
+                <div class="service-status-heading">
+                    <h2>Generic Device Protocol</h2>
+                    <span id="gdp-overall-badge" class="status-badge status-loading">Verifica…</span>
+                </div>
+                <dl class="service-status-list">
+                    <div>
+                        <dt>GDP server</dt>
+                        <dd id="gdp-server-status">In attesa</dd>
+                    </div>
+                    <div>
+                        <dt>MQTT service</dt>
+                        <dd id="gdp-mqtt-service-status">In attesa</dd>
+                    </div>
+                    <div>
+                        <dt>Broker</dt>
+                        <dd id="gdp-broker-status">In attesa</dd>
+                    </div>
+                </dl>
+                <p id="gdp-status-detail" class="service-status-detail"></p>
+            </section>
             <!-- Card per lo stream della ESP32-CAM -->
             <section id="stream-card" class="link-card">
                 <h2>ESP32 Stream</h2>
@@ -78,6 +99,48 @@
     }
     fetchSystemInfo();
     setInterval(fetchSystemInfo, 30000);
+
+    function formatServiceState(service) {
+        if (!service.loaded) return 'non installato';
+        const pid = service.main_pid ? ` · PID ${service.main_pid}` : '';
+        return `${service.active_state}/${service.sub_state}${pid}`;
+    }
+
+    function setGdpStatusUnavailable(message) {
+        const badge = document.getElementById('gdp-overall-badge');
+        badge.className = 'status-badge status-offline';
+        badge.textContent = 'Non disponibile';
+        document.getElementById('gdp-status-detail').textContent = message;
+    }
+
+    async function fetchGdpServiceStatus() {
+        try {
+            const response = await fetch('/api/services/gdp', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok || response.redirected) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            const badge = document.getElementById('gdp-overall-badge');
+            badge.className = `status-badge ${data.healthy ? 'status-online' : 'status-offline'}`;
+            badge.textContent = data.healthy ? 'Operativo' : 'Degradato';
+            document.getElementById('gdp-server-status').textContent =
+                formatServiceState(data.gdp_server);
+            document.getElementById('gdp-mqtt-service-status').textContent =
+                formatServiceState(data.mqtt_service);
+            document.getElementById('gdp-broker-status').textContent = data.broker.reachable
+                ? `${data.broker.host}:${data.broker.port} raggiungibile`
+                : `${data.broker.host}:${data.broker.port} non raggiungibile`;
+            document.getElementById('gdp-status-detail').textContent =
+                `Ultimo controllo: ${new Date(data.checked_at).toLocaleString()}`;
+        } catch (error) {
+            console.error('Error fetching GDP service status:', error);
+            setGdpStatusUnavailable('Impossibile leggere lo stato del servizio.');
+        }
+    }
+    fetchGdpServiceStatus();
+    setInterval(fetchGdpServiceStatus, 10000);
 
     // Creazione e aggiornamento del grafico di rete tramite Chart.js
     let networkChart;
