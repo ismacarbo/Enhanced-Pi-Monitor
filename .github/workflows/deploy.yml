@@ -61,5 +61,10 @@ jobs:
              make wiki-up
              sudo -n systemctl restart pimonitor.service
              make wiki-status
-             curl --fail --silent --show-error http://127.0.0.1:3000/healthz > /dev/null
+             docker compose \
+               --project-directory infrastructure/wikijs \
+               --env-file infrastructure/wikijs/.env \
+               -f infrastructure/wikijs/docker-compose.yml \
+               exec -T wikijs \
+               curl --fail --silent --show-error http://127.0.0.1:3000/healthz > /dev/null
              curl --fail --silent --show-error http://127.0.0.1:5000/portfolio > /dev/null'
