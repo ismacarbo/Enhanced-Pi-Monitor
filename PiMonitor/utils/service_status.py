@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 GDP_SERVICE_UNIT = "gdp-server.service"
 MQTT_SERVICE_UNIT = "autoirrigation-mqtt.service"
+SYSTEMCTL = "/usr/bin/systemctl"
 
 
 def get_gdp_stack_status(
@@ -45,7 +46,7 @@ def get_gdp_stack_status(
 
 def _systemd_unit_status(unit, runner):
     command = [
-        "systemctl",
+        SYSTEMCTL,
         "show",
         unit,
         "--no-pager",
