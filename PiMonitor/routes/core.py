@@ -40,6 +40,10 @@ def register_core_routes(app):
     def portfolio():
         return render_template('portfolio.html')
 
+    @app.route('/projects')
+    def projects():
+        return render_template('projects.html')
+
     
     @app.route('/video_feed')
     def video_feed():
