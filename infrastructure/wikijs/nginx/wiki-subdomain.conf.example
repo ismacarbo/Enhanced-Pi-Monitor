@@ -3,7 +3,6 @@
 # pimonitor_wiki_access cookie for a shared parent cookie domain.
 server {
     listen 80;
-    listen [::]:80;
     server_name wiki.example.invalid;
 
     client_max_body_size 25m;
