@@ -12,15 +12,30 @@ Environment="PIMONITOR_BEHIND_PROXY=true"
 Environment="PIMONITOR_COOKIE_SECURE=true"
 Environment="PIMONITOR_START_FAN=false"
 Environment="YOLO_CONFIG_DIR=/tmp/Ultralytics"
+Environment="PYTHONDONTWRITEBYTECODE=1"
 ExecStart=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/venv/bin/gunicorn --workers 1 --threads 4 --bind 127.0.0.1:5000 --timeout 120 --graceful-timeout 30 --access-logfile - --error-logfile - wsgi:app
 Restart=on-failure
 RestartSec=3
 TimeoutStartSec=120
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
+CapabilityBoundingSet=
+LockPersonality=true
+ProtectClock=true
+ProtectControlGroups=true
 ProtectHome=read-only
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
 ReadWritePaths=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/PiMonitor/known_faces
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
 UMask=0077
 
 [Install]
