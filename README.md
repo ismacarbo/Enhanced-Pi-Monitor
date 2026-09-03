@@ -21,7 +21,9 @@ Gunicorn 127.0.0.1:5000
 ```
 
 Gunicorn is the production server. Flask's built-in server binds only to
-loopback when `app.py` is run manually and must not be exposed directly.
+loopback when `app.py` is run manually and must not be exposed directly. Vision
+dependencies are imported only when a camera/registration route is used, so a
+vision fault cannot prevent the monitoring dashboard from starting.
 
 ## Authentication boundaries
 
@@ -91,8 +93,10 @@ python -m unittest discover -s PiMonitor/tests -v
 ## Raspberry Pi deployment
 
 The checked-in unit runs one Gunicorn worker with four threads on
-`127.0.0.1:5000`, starts the optional serial fan worker once and applies basic
-systemd hardening. The fixed production checkout is
+`127.0.0.1:5000` and applies basic systemd hardening. The serial fan worker is
+disabled in the supplied Pi profile because the deployed host currently has no
+`/dev/ttyACM0`; set `PIMONITOR_START_FAN=true` in a systemd drop-in when that
+controller is installed. The fixed production checkout is
 `/home/ismacarbo/Desktop/Enhanced-Pi-Monitor`.
 
 ```sh

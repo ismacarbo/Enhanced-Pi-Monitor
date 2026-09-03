@@ -16,11 +16,6 @@ from auth import (
     token_required,
     valid_csrf_token,
 )
-from detectors.yolo_face import (
-    get_last_face_jpg,
-    register_face_from_last,
-    register_face_from_upload,
-)
 from occupancy.state import get_probability_map, update_from_points
 from utils.names import sanitize_name
 from utils.sensors import get_temp_c, get_voltage
@@ -133,6 +128,8 @@ def register_api_routes(app):
     @app.post("/api/face")
     @device_token_required
     def face_api():
+        from detectors.yolo_face import register_face_from_upload
+
         data = request.get_data()
         if not data:
             return jsonify({"status": "error", "message": "No data"}), 400
@@ -151,6 +148,8 @@ def register_api_routes(app):
     @app.get("/last_face.jpg")
     @token_required
     def last_face(_user):
+        from detectors.yolo_face import get_last_face_jpg
+
         data = get_last_face_jpg()
         if not data:
             return "No face captured yet", 404
@@ -159,6 +158,8 @@ def register_api_routes(app):
     @app.route("/register", methods=["GET", "POST"])
     @token_required
     def register(user):
+        from detectors.yolo_face import register_face_from_last
+
         if request.method == "POST":
             if not valid_csrf_token():
                 return "Invalid or expired form token", 400
@@ -182,6 +183,8 @@ def register_api_routes(app):
     @app.post("/api/register_face")
     @token_required
     def api_register_face(_user):
+        from detectors.yolo_face import register_face_from_upload
+
         if not valid_csrf_token():
             return jsonify({"error": "invalid_csrf_token"}), 400
         name = sanitize_name(request.form.get("name", ""))

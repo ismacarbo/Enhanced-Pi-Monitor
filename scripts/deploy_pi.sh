@@ -36,5 +36,15 @@ sudo -n systemctl daemon-reload
 sudo -n systemctl enable pimonitor.service
 sudo -n systemctl restart pimonitor.service
 sudo -n systemctl is-active --quiet pimonitor.service
-curl --fail --silent --show-error http://127.0.0.1:5000/portfolio >/dev/null
+
+attempt=0
+until curl --fail --silent http://127.0.0.1:5000/portfolio >/dev/null; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 30 ]; then
+        echo "Pi Monitor did not become HTTP-ready within 30 seconds" >&2
+        sudo -n journalctl -u pimonitor.service -n 80 --no-pager >&2
+        exit 1
+    fi
+    sleep 1
+done
 sudo -n systemctl --no-pager --full status pimonitor.service
