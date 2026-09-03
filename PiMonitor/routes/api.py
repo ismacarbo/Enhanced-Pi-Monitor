@@ -1,176 +1,265 @@
-from flask import request, jsonify, Response, redirect, url_for
-from auth import token_required
-from utils.sensors import get_voltage, get_temp_c
-import psutil, datetime, os
+"""Authenticated dashboard APIs and token-authenticated device ingestion."""
+
+from __future__ import annotations
+
+import datetime
+import math
+import threading
+import time
+
+import psutil
+from flask import Response, jsonify, redirect, render_template, request, url_for
+
+from auth import (
+    csrf_token,
+    device_token_required,
+    token_required,
+    valid_csrf_token,
+)
+from detectors.yolo_face import (
+    get_last_face_jpg,
+    register_face_from_last,
+    register_face_from_upload,
+)
+from occupancy.state import get_probability_map, update_from_points
 from utils.names import sanitize_name
-from detectors.yolo_face import get_last_face_jpg, register_face_from_last, register_face_from_upload
-from occupancy.state import update_from_points, get_probability_map
+from utils.sensors import get_temp_c, get_voltage
 from utils.telegram import send_telegram_alert
 
 
 sensor_records = []
+sensor_records_lock = threading.Lock()
 MAX_RECORDS = 100
-
 CPU_TEMP_THRESHOLD = 70.0
-VOLTAGE_THRESHOLD  = 4.8
+VOLTAGE_THRESHOLD = 4.8
+ALERT_COOLDOWN_SECONDS = 900
+last_alert_at = {}
+alert_lock = threading.Lock()
+
+
+def send_alert_with_cooldown(key, message):
+    """Send a best-effort alert at most once per configured interval."""
+    now = time.monotonic()
+    with alert_lock:
+        previous = last_alert_at.get(key, 0.0)
+        if now - previous < ALERT_COOLDOWN_SECONDS:
+            return
+        last_alert_at[key] = now
+    send_telegram_alert(message)
+
 
 def register_api_routes(app):
-    @app.route('/api/system', methods=['GET'])
+    @app.get("/api/system")
     @token_required
-    def system_info(user):
-        try:
-            cpu_temp = get_temp_c()
-        except Exception:
-            cpu_temp = 0.0
-        mem = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
-
+    def system_info(_user):
+        cpu_temp = get_temp_c()
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage("/")
         voltage = get_voltage()
-        if cpu_temp > CPU_TEMP_THRESHOLD:
-            send_telegram_alert(f"Alert: CPU temp high ({cpu_temp} °C)!")
-        if voltage < VOLTAGE_THRESHOLD:
-            send_telegram_alert(f"Alert: Low voltage ({voltage} V)!")
 
-        return jsonify({
-            "cpu_temperature": cpu_temp,
-            "memory": {
-                "total": mem.total, "used": mem.used, "free": mem.free, "percent": mem.percent
-            },
-            "disk": {
-                "total": disk.total, "used": disk.used, "free": disk.free, "percent": disk.percent
-            },
-            "voltage": voltage,
-            "power_status": "Online"
-        })
+        if cpu_temp is not None and cpu_temp > CPU_TEMP_THRESHOLD:
+            send_alert_with_cooldown(
+                "cpu_temperature", f"Alert: CPU temp high ({cpu_temp:.1f} °C)!"
+            )
+        if voltage is not None and voltage < VOLTAGE_THRESHOLD:
+            send_alert_with_cooldown(
+                "voltage", f"Alert: Low voltage ({voltage:.2f} V)!"
+            )
 
-    @app.route('/api/network', methods=['GET'])
+        return jsonify(
+            {
+                "cpu_temperature": cpu_temp,
+                "memory": {
+                    "total": memory.total,
+                    "used": memory.used,
+                    "free": memory.free,
+                    "percent": memory.percent,
+                },
+                "disk": {
+                    "total": disk.total,
+                    "used": disk.used,
+                    "free": disk.free,
+                    "percent": disk.percent,
+                },
+                "voltage": voltage,
+                "power_status": "Online",
+            }
+        )
+
+    @app.get("/api/network")
     @token_required
-    def network_info(user):
+    def network_info(_user):
         counters = psutil.net_io_counters(pernic=True)
-        out = {iface: {
+        return jsonify(
+            {
+                interface: {
                     "bytes_sent": stats.bytes_sent,
                     "bytes_recv": stats.bytes_recv,
                     "packets_sent": stats.packets_sent,
-                    "packets_recv": stats.packets_recv
-                } for iface, stats in counters.items()}
-        return jsonify(out)
+                    "packets_recv": stats.packets_recv,
+                }
+                for interface, stats in counters.items()
+            }
+        )
 
-    @app.route('/api/temperature', methods=['GET'])
+    @app.get("/api/temperature")
+    @device_token_required
     def temperature():
-        t = request.args.get('temp'); h = request.args.get('hum')
-        if t and h:
-            try:
-                tv = float(t); hv = float(h)
-                print(f"Received temp: {tv} °C, hum: {hv} %")
-                return jsonify({"status":"success","temperature":tv,"humidity":hv}), 200
-            except Exception:
-                return jsonify({"status":"error","message":"Invalid values"}), 400
-        return jsonify({"status":"error","message":"Missing params"}), 400
+        try:
+            temperature_value = float(request.args["temp"])
+            humidity_value = float(request.args["hum"])
+            if not math.isfinite(temperature_value) or not math.isfinite(
+                humidity_value
+            ):
+                raise ValueError
+            if not -50 <= temperature_value <= 100 or not 0 <= humidity_value <= 100:
+                raise ValueError
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"status": "error", "message": "Invalid values"}), 400
 
-    
-    @app.route('/api/face', methods=['POST'])
+        app.logger.info(
+            "legacy temperature received temp=%s hum=%s",
+            temperature_value,
+            humidity_value,
+        )
+        return jsonify(
+            {
+                "status": "success",
+                "temperature": temperature_value,
+                "humidity": humidity_value,
+            }
+        )
+
+    @app.post("/api/face")
+    @device_token_required
     def face_api():
         data = request.get_data()
         if not data:
-            return jsonify({"status":"error","message":"No data"}), 400
-        
-        
-        ok, msg = register_face_from_upload(data, name='api')
+            return jsonify({"status": "error", "message": "No data"}), 400
+        try:
+            ok, message = register_face_from_upload(data, name="api")
+        except (OSError, ValueError) as exc:
+            app.logger.warning("invalid face upload: %s", exc)
+            return jsonify({"status": "error", "message": "Invalid image"}), 400
         if ok:
-            send_telegram_alert(f"Face registered (API): api")
-            return jsonify({"status":"success","message":"Registered","recognition":"api"}), 200
-        else:
-            send_telegram_alert("Alert (API): No face in upload!")
-            return jsonify({"status":"error","message":msg}), 400
+            send_telegram_alert("Face registered from device API")
+            return jsonify(
+                {"status": "success", "message": "Registered", "recognition": "api"}
+            )
+        return jsonify({"status": "error", "message": message}), 400
 
-    
-    @app.route('/last_face.jpg')
-    def last_face():
+    @app.get("/last_face.jpg")
+    @token_required
+    def last_face(_user):
         data = get_last_face_jpg()
         if not data:
             return "No face captured yet", 404
-        return Response(data, mimetype='image/jpeg')
+        return Response(data, mimetype="image/jpeg")
 
-    @app.route('/register', methods=['GET','POST'])
-    def register():
-        if request.method == 'POST':
-            name = sanitize_name(request.form.get('name', ''))
+    @app.route("/register", methods=["GET", "POST"])
+    @token_required
+    def register(user):
+        if request.method == "POST":
+            if not valid_csrf_token():
+                return "Invalid or expired form token", 400
+            name = sanitize_name(request.form.get("name", ""))
             if not name:
                 return "Missing name", 400
-            ok, msg = register_face_from_last(name)
+            ok, message = register_face_from_last(name)
             if not ok:
-                return f"Error: {msg}", 400
-            return redirect(url_for('register_success', who=name))
-        
-        return """
-        <html><head><title>Register Face</title></head>
-        <body>
-          <h1>Register Face</h1>
-          <div>
-            <p>Ultimo volto catturato dallo stream (se disponibile):</p>
-            <img src="/last_face.jpg" style="max-width:320px; border:1px solid 
-                 onerror="this.replaceWith(document.createTextNode('Nessun volto catturato'));" />
-          </div>
-          <form method="POST" style="margin-top:20px">
-            <label>Nome (etichetta): <input name="name" required /></label>
-            <button type="submit">Salva volto</button>
-          </form>
-          <p style="margin-top:10px"><a href="/objects">↩ Torna allo stream</a></p>
-        </body></html>
-        """
+                return f"Error: {message}", 400
+            return redirect(url_for("register_success", who=name))
+        return render_template(
+            "register.html", user=user, csrf_token=csrf_token()
+        )
 
-    @app.route('/register_success')
-    def register_success():
-        who = request.args.get('who', 'utente')
-        return f"Registrato: {who}. Ora sarà riconosciuto nello stream."
-
-    @app.route('/api/register_face', methods=['POST'])
-    def api_register_face():
-        name = sanitize_name(request.form.get('name',''))
-        file = request.files.get('image')
-        if not name or not file:
-            return jsonify({"status":"error","message":"name or image missing"}), 400
-        ok, msg = register_face_from_upload(file.read(), name)
-        if ok:
-            return jsonify({"status":"success","name":name})
-        else:
-            return jsonify({"status":"error","message":msg}), 400
-
-    
-    @app.route('/api/irrigation_data', methods=['POST'])
-    def add_irrigation_data():
-        payload = request.get_json(force=True)
-        try:
-            moisture = float(payload.get('moisture'))
-            light    = float(payload.get('light'))
-        except Exception:
-            return jsonify({"status":"error","message":"Invalid payload"}), 400
-
-        timestamp = datetime.datetime.utcnow().isoformat()
-        sensor_records.append({"time": timestamp, "moisture": moisture, "light": light})
-        if len(sensor_records) > MAX_RECORDS:
-            sensor_records.pop(0)
-
-        if moisture < 50:
-            from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID  
-            send_telegram_alert(f"💧 Low moisture alert: {moisture:.1f}%")
-
-        return jsonify({"status":"success"}), 201
-
-    @app.route('/api/irrigation_data', methods=['GET'])
+    @app.get("/register_success")
     @token_required
-    def get_irrigation_data(user):
-        return jsonify(sensor_records)
+    def register_success(_user):
+        who = sanitize_name(request.args.get("who", "")) or "utente"
+        return render_template("register_success.html", who=who)
 
-    
-    @app.route('/api/lidarDatas', methods=['POST'])
-    def getLidarDatas():
-        data = request.get_json(force=True)
-        points = data.get('points', [])
-        update_from_points(points)
-        print(f"payload LiDAR received: {data}")
-        return jsonify({"status": "received", "received": data}), 201
+    @app.post("/api/register_face")
+    @token_required
+    def api_register_face(_user):
+        if not valid_csrf_token():
+            return jsonify({"error": "invalid_csrf_token"}), 400
+        name = sanitize_name(request.form.get("name", ""))
+        uploaded_file = request.files.get("image")
+        if not name or not uploaded_file:
+            return jsonify(
+                {"status": "error", "message": "name or image missing"}
+            ), 400
+        try:
+            ok, message = register_face_from_upload(uploaded_file.read(), name)
+        except (OSError, ValueError) as exc:
+            app.logger.warning("invalid face upload: %s", exc)
+            return jsonify({"status": "error", "message": "Invalid image"}), 400
+        if ok:
+            return jsonify({"status": "success", "name": name})
+        return jsonify({"status": "error", "message": message}), 400
 
-    @app.route('/api/occupancy_map.json')
-    def occupancy_map_json():
+    @app.post("/api/irrigation_data")
+    @device_token_required
+    def add_irrigation_data():
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return jsonify({"status": "error", "message": "Invalid payload"}), 400
+        try:
+            moisture = float(payload["moisture"])
+            light = float(payload["light"])
+            if not math.isfinite(moisture) or not math.isfinite(light):
+                raise ValueError
+            if not 0 <= moisture <= 100 or not 0 <= light <= 1_000_000:
+                raise ValueError
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"status": "error", "message": "Invalid payload"}), 400
+
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with sensor_records_lock:
+            sensor_records.append(
+                {"time": timestamp, "moisture": moisture, "light": light}
+            )
+            del sensor_records[:-MAX_RECORDS]
+        if moisture < 50:
+            send_alert_with_cooldown(
+                "soil_moisture", f"Low moisture alert: {moisture:.1f}%"
+            )
+        return jsonify({"status": "success"}), 201
+
+    @app.get("/api/irrigation_data")
+    @token_required
+    def get_irrigation_data(_user):
+        with sensor_records_lock:
+            return jsonify(list(sensor_records))
+
+    @app.post("/api/lidarDatas")
+    @device_token_required
+    def lidar_data():
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "invalid_payload"}), 400
+        points = data.get("points", [])
+        if not isinstance(points, list) or len(points) > 720:
+            return jsonify({"error": "invalid_points"}), 400
+        normalized_points = []
+        try:
+            for point in points:
+                angle = float(point["angle"])
+                distance = float(point["distance"])
+                if not math.isfinite(angle) or not math.isfinite(distance):
+                    raise ValueError
+                if not -360 <= angle <= 360 or not 0 <= distance <= 1000:
+                    raise ValueError
+                normalized_points.append({"angle": angle, "distance": distance})
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"error": "invalid_points"}), 400
+        update_from_points(normalized_points)
+        return jsonify(
+            {"status": "received", "point_count": len(normalized_points)}
+        ), 201
+
+    @app.get("/api/occupancy_map.json")
+    @token_required
+    def occupancy_map_json(_user):
         return jsonify(get_probability_map())

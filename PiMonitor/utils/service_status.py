@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import os
+import json
+import math
 import socket
 import subprocess
 from contextlib import closing
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 GDP_SERVICE_UNIT = "gdp-server.service"
 MQTT_SERVICE_UNIT = "autoirrigation-mqtt.service"
 SYSTEMCTL = "/usr/bin/systemctl"
+DEFAULT_DEVICE_STATE_FILE = "/run/gdp-server/devices.json"
+MAX_DEVICE_STATE_BYTES = 1_048_576
 
 
 def get_gdp_stack_status(
@@ -30,17 +35,30 @@ def get_gdp_stack_status(
     except (TypeError, ValueError):
         port = 1883
 
+    checked_at = datetime.now(timezone.utc)
     gdp_service = _systemd_unit_status(GDP_SERVICE_UNIT, runner)
     mqtt_service = _systemd_unit_status(MQTT_SERVICE_UNIT, runner)
     broker = _broker_status(host, port, connector)
+    try:
+        stale_after = int(environment.get("GDP_DEVICE_STALE_SECONDS", "90"))
+        if not 10 <= stale_after <= 3600:
+            raise ValueError
+    except (TypeError, ValueError):
+        stale_after = 90
+    device_snapshot = _read_device_snapshot(
+        environment.get("GDP_STATUS_FILE", DEFAULT_DEVICE_STATE_FILE),
+        checked_at,
+        stale_after,
+    )
     healthy = gdp_service["active"] and mqtt_service["active"] and broker["reachable"]
 
     return {
         "healthy": healthy,
-        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checked_at": checked_at.isoformat(),
         "gdp_server": gdp_service,
         "mqtt_service": mqtt_service,
         "broker": broker,
+        "device_snapshot": device_snapshot,
     }
 
 
@@ -119,3 +137,109 @@ def _safe_int(value):
         return int(value or 0)
     except (TypeError, ValueError):
         return 0
+
+
+def _read_device_snapshot(path_value, checked_at, stale_after):
+    path = Path(path_value)
+    try:
+        raw_payload = path.read_bytes()
+        if len(raw_payload) > MAX_DEVICE_STATE_BYTES:
+            raise ValueError("device snapshot exceeds size limit")
+        payload = json.loads(raw_payload)
+        if not isinstance(payload, dict):
+            raise ValueError("invalid device snapshot root")
+        if payload.get("schema_version") != 1:
+            raise ValueError("unsupported device snapshot version")
+        raw_devices = payload.get("devices")
+        if not isinstance(raw_devices, dict):
+            raise ValueError("invalid devices object")
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "updated_at": None,
+            "online_count": 0,
+            "devices": [],
+            "error": str(exc)[:160],
+        }
+
+    devices = []
+    for device_id, raw in list(sorted(raw_devices.items()))[:64]:
+        if not isinstance(device_id, str) or not isinstance(raw, dict):
+            continue
+        last_seen = _parse_timestamp(raw.get("last_seen"))
+        age_seconds = (
+            max(0, int((checked_at - last_seen).total_seconds()))
+            if last_seen is not None
+            else None
+        )
+        online = (
+            age_seconds is not None
+            and age_seconds <= stale_after
+            and raw.get("reported_online") is not False
+        )
+        telemetry = raw.get("telemetry")
+        state = raw.get("state")
+        capabilities = raw.get("capabilities")
+        devices.append(
+            {
+                "device_id": device_id[:64],
+                "online": online,
+                "reported_online": raw.get("reported_online"),
+                "last_seen": last_seen.isoformat() if last_seen else None,
+                "age_seconds": age_seconds,
+                "health": _safe_text(raw.get("health"), 64),
+                "device_type": _safe_text(raw.get("device_type"), 64),
+                "firmware_version": _safe_text(
+                    raw.get("firmware_version"), 64
+                ),
+                "capabilities": [
+                    item[:96]
+                    for item in capabilities[:16]
+                    if isinstance(item, str)
+                ]
+                if isinstance(capabilities, list)
+                else [],
+                "telemetry": _safe_mapping(telemetry),
+                "state": _safe_mapping(state),
+            }
+        )
+
+    return {
+        "available": True,
+        "updated_at": _safe_text(payload.get("updated_at"), 64),
+        "online_count": sum(device["online"] for device in devices),
+        "devices": devices,
+        "error": None,
+    }
+
+
+def _parse_timestamp(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _safe_text(value, limit):
+    return value[:limit] if isinstance(value, str) else None
+
+
+def _safe_mapping(value):
+    if not isinstance(value, dict):
+        return {}
+    sanitized = {}
+    for key, item in list(value.items())[:16]:
+        if not isinstance(key, str):
+            continue
+        if isinstance(item, bool) or item is None:
+            sanitized[key[:64]] = item
+        elif isinstance(item, (int, float)) and math.isfinite(item):
+            sanitized[key[:64]] = item
+        elif isinstance(item, str):
+            sanitized[key[:64]] = item[:96]
+    return sanitized

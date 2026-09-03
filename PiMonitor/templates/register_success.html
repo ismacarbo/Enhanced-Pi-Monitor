@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Volto registrato · Pi Control Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+  <main class="utility-shell utility-narrow">
+    <section class="form-card success-card">
+      <span class="success-mark" aria-hidden="true">✓</span>
+      <p class="eyebrow">Operazione completata</p>
+      <h1>{{ who }} è stato registrato.</h1>
+      <p>Il detector userà il nuovo profilo nei prossimi frame.</p>
+      <a class="button button-primary" href="{{ url_for('objects') }}">Torna alla camera</a>
+    </section>
+  </main>
+</body>
+</html>

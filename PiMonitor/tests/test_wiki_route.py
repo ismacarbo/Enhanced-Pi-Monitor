@@ -3,7 +3,6 @@
 import sys
 import types
 import unittest
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
@@ -42,22 +41,14 @@ class WikiRouteTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def authenticate(self):
-        token = jwt.encode(
-            {
-                "username": "ismacarbo",
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
-            },
-            TEST_SECRET,
-            algorithm="HS256",
-        )
         with self.client.session_transaction() as session:
-            session["jwt"] = token
+            session["username"] = "ismacarbo"
 
     def test_anonymous_request_redirects_to_login(self):
         response = self.client.get("/wiki")
 
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.headers["Location"].endswith("/login"))
+        self.assertIn("/login?next=", response.headers["Location"])
 
     def test_authenticated_request_redirects_to_wikijs(self):
         self.authenticate()

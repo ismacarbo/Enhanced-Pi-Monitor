@@ -27,8 +27,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install existing Flask requirements
-        run: python -m pip install --disable-pip-version-check -r PiMonitor/requirements.txt
+      - name: Install test requirements
+        run: python -m pip install --disable-pip-version-check -r PiMonitor/requirements-ci.txt
 
       - name: Run knowledge unit tests
         run: python -m unittest discover -s PiMonitor/tests -v
@@ -53,7 +53,7 @@ jobs:
           PY
 
       - name: Validate administration scripts
-        run: sh -n infrastructure/wikijs/scripts/backup.sh infrastructure/wikijs/scripts/restore.sh
+        run: sh -n scripts/deploy_pi.sh infrastructure/wikijs/scripts/backup.sh infrastructure/wikijs/scripts/restore.sh
 
       - name: Validate Wiki.js Compose model
         env:

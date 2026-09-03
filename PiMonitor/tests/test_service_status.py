@@ -3,11 +3,12 @@
 import sys
 import types
 import unittest
-from datetime import datetime, timedelta, timezone
+import json
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import jwt
 from flask import Flask
 
 PIMONITOR_ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +73,45 @@ class ServiceStatusTests(unittest.TestCase):
         self.assertFalse(status["healthy"])
         self.assertFalse(status["broker"]["reachable"])
 
+    def test_reads_bounded_device_snapshot(self):
+        runner = Mock(side_effect=lambda args, **_kwargs: systemctl_result(args[2]))
+        connector = Mock(return_value=ClosableSocket())
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = Path(directory) / "devices.json"
+            now = datetime.now(timezone.utc).isoformat()
+            snapshot.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "updated_at": now,
+                        "devices": {
+                            "greenhouse-01": {
+                                "last_seen": now,
+                                "reported_online": True,
+                                "device_type": "greenhouse-node",
+                                "capabilities": ["environment.temperature"],
+                                "telemetry": {"temperature_c": 22.5},
+                                "state": {"pump": "PUMP_STATE_OFF"},
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            status = get_gdp_stack_status(
+                runner=runner,
+                connector=connector,
+                environ={"GDP_STATUS_FILE": str(snapshot)},
+            )
+
+        device_snapshot = status["device_snapshot"]
+        self.assertTrue(device_snapshot["available"])
+        self.assertEqual(device_snapshot["online_count"], 1)
+        self.assertEqual(
+            device_snapshot["devices"][0]["telemetry"]["temperature_c"], 22.5
+        )
+
 
 class ServiceStatusRouteTests(unittest.TestCase):
     def setUp(self):
@@ -86,22 +126,14 @@ class ServiceStatusRouteTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def authenticate(self):
-        token = jwt.encode(
-            {
-                "username": "ismacarbo",
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
-            },
-            TEST_SECRET,
-            algorithm="HS256",
-        )
         with self.client.session_transaction() as session:
-            session["jwt"] = token
+            session["username"] = "ismacarbo"
 
-    def test_anonymous_status_request_redirects_to_login(self):
+    def test_anonymous_status_request_returns_json_unauthorized(self):
         response = self.client.get("/api/services/gdp")
 
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.headers["Location"].endswith("/login"))
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json(), {"error": "authentication_required"})
 
     @patch("routes.services.get_gdp_stack_status")
     def test_authenticated_status_request_returns_json(self, get_status):

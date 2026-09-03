@@ -59,7 +59,7 @@ jobs:
              git fetch --prune origin main
              git merge --ff-only origin/main
              make wiki-up
-             sudo -n systemctl restart pimonitor.service
+             make deploy-pi
              make wiki-status
              docker compose \
                --project-directory infrastructure/wikijs \

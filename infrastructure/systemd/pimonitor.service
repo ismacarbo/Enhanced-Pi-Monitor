@@ -1,0 +1,26 @@
+[Unit]
+Description=Enhanced Pi Monitor web application
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ismacarbo
+WorkingDirectory=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/PiMonitor
+Environment="PATH=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="PIMONITOR_BEHIND_PROXY=true"
+Environment="PIMONITOR_COOKIE_SECURE=true"
+Environment="PIMONITOR_START_FAN=true"
+ExecStart=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/venv/bin/gunicorn --workers 1 --threads 4 --bind 127.0.0.1:5000 --timeout 120 --graceful-timeout 30 --access-logfile - --error-logfile - wsgi:app
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=120
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/ismacarbo/Desktop/Enhanced-Pi-Monitor/PiMonitor/known_faces
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

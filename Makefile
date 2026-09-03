@@ -2,7 +2,10 @@ WIKI_DIR := infrastructure/wikijs
 WIKI_ENV := $(WIKI_DIR)/.env
 WIKI_COMPOSE := docker compose --project-directory $(WIKI_DIR) --env-file $(WIKI_ENV) -f $(WIKI_DIR)/docker-compose.yml
 
-.PHONY: wiki-check-env wiki-up wiki-down wiki-logs wiki-restart wiki-status wiki-pull wiki-backup wiki-restore
+.PHONY: deploy-pi wiki-check-env wiki-up wiki-down wiki-logs wiki-restart wiki-status wiki-pull wiki-backup wiki-restore
+
+deploy-pi:
+	./scripts/deploy_pi.sh
 
 wiki-check-env:
 	@test -f $(WIKI_ENV) || (echo "Missing $(WIKI_ENV). Copy $(WIKI_DIR)/.env.example first." >&2; exit 2)

@@ -9,7 +9,9 @@ import os
 
 
 SECRET_KEY = os.environ["FLASK_SECRET_KEY"]
+USERNAME = os.environ.get("PIMONITOR_USERNAME", "ismacarbo")
 PASSWORD = os.environ["PIMONITOR_PASSWORD"]
+DEVICE_API_TOKEN = os.environ["PIMONITOR_DEVICE_TOKEN"]
 OPENWEATHER_API = os.environ.get("OPENWEATHER_API", "")
 WINDY_API = os.environ.get("WINDY_API", "")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")

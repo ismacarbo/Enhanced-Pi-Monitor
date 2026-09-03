@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portfolio - Ismaele Carbonari</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
 
 <body>
@@ -193,40 +192,42 @@
           style="color:#f7ca18;">LinkedIn</a>
       </p>
     </div>
-    <form action="#" method="post">
-      <input type="text" name="name" placeholder="Your name" required />
-      <input type="email" name="email" placeholder="Your email" required />
-      <textarea name="message" rows="5" placeholder="Your message" required></textarea>
-      <input type="submit" value="Send" />
-    </form>
+    <p style="text-align:center; margin-top:30px;">
+      <a href="mailto:tiados04@gmail.com?subject=Contatto%20dal%20portfolio" style="display:inline-block; background:#f7ca18; color:#1b1b1b; padding:12px 20px; border-radius:4px; font-weight:700;">Send an email →</a>
+    </p>
   </section>
 
   <script>
-    (function ($) {
+    (() => {
+      const sections = ['#home', '#about', '#skills', '#projects', '#work', '#contact'];
+      const menuItems = Array.from(document.querySelectorAll('nav li'));
+
       function updateMenu() {
-        var scrollPos = $(document).scrollTop();
-        var sections = ['#home', '#about', '#skills', '#projects', '#work', '#contact'];
-        var activeIndex = 0;
+        const scrollPos = window.scrollY;
+        let activeIndex = 0;
         sections.forEach(function (section, index) {
-          var offset = $(section).offset().top - 150;
-          var height = $(section).outerHeight();
+          const target = document.querySelector(section);
+          if (!target) return;
+          const offset = target.offsetTop - 150;
+          const height = target.offsetHeight;
           if (scrollPos >= offset && scrollPos < offset + height) {
             activeIndex = index;
           }
         });
-        $('nav li').removeClass('active');
-        $('nav li').eq(activeIndex).addClass('active');
+        menuItems.forEach((item, index) => item.classList.toggle('active', index === activeIndex));
       }
-      $('nav a[href^="#"]').on('click', function (e) {
-        e.preventDefault();
-        var target = $(this.getAttribute('href'));
-        if (target.length) {
-          $('html, body').animate({ scrollTop: target.offset().top }, 1000);
-        }
+
+      document.querySelectorAll('nav a[href^="#"]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const target = document.querySelector(link.getAttribute('href'));
+          if (!target) return;
+          event.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth' });
+        });
       });
-      $(document).on('scroll', updateMenu);
-      $(document).ready(updateMenu);
-    })(jQuery);
+      document.addEventListener('scroll', updateMenu, { passive: true });
+      updateMenu();
+    })();
   </script>
 </body>
 

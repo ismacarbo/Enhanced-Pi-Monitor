@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Registra volto · Pi Control Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+  <main class="utility-shell utility-narrow">
+    <a class="back-link" href="{{ url_for('objects') }}">← Torna alla camera</a>
+    <section class="form-card">
+      <p class="eyebrow">Face recognition</p>
+      <h1>Registra l’ultimo volto</h1>
+      <p>Assegna un nome al volto catturato più recentemente dal detector.</p>
+      <img class="face-preview" src="{{ url_for('last_face') }}" alt="Ultimo volto rilevato">
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="name">Nome</label>
+        <input id="name" name="name" maxlength="64" autocomplete="off" required>
+        <button class="button button-primary" type="submit">Conferma registrazione</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

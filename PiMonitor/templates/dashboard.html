@@ -1,347 +1,138 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Inclusione di Chart.js per il grafico -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Pi Control Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </head>
-<body>
-    <div class="dashboard-container">
-        <h1>Dashboard</h1>
-        <div class="dashboard-grid">
-            <!-- Sezione con le informazioni di sistema -->
-            <section id="system-info">
-                <h2>System Info</h2>
-                <div id="system-data">
-                    <!-- I dati verranno inseriti dinamicamente -->
-                </div>
-            </section>
-            <!-- Sezione con il grafico della rete -->
-            <section id="network-graph">
-                <h2>Network Graph</h2>
-                <canvas id="networkChart"></canvas>
-            </section>
-            <section id="sensor-graph">
-                <h2>Irrigation Data</h2>
-                <canvas id="sensorChart"></canvas>
-            </section>
-            <section id="gdp-service-card" class="service-status-card" aria-live="polite">
-                <div class="service-status-heading">
-                    <h2>Generic Device Protocol</h2>
-                    <span id="gdp-overall-badge" class="status-badge status-loading">Verifica…</span>
-                </div>
-                <dl class="service-status-list">
-                    <div>
-                        <dt>GDP server</dt>
-                        <dd id="gdp-server-status">In attesa</dd>
-                    </div>
-                    <div>
-                        <dt>MQTT service</dt>
-                        <dd id="gdp-mqtt-service-status">In attesa</dd>
-                    </div>
-                    <div>
-                        <dt>Broker</dt>
-                        <dd id="gdp-broker-status">In attesa</dd>
-                    </div>
-                </dl>
-                <p id="gdp-status-detail" class="service-status-detail"></p>
-            </section>
-            <!-- Card per lo stream della ESP32-CAM -->
-            <section id="stream-card" class="link-card">
-                <h2>ESP32 Stream</h2>
-                <p>Visualizza lo stream video con riconoscimento facciale.</p>
-                <a href="{{ url_for('stream_face') }}">Vai allo Stream</a>
-            </section>
-            <!-- Card per il Weather Endpoint -->
-            <section id="weather-card" class="link-card">
-                <h2>Weather</h2>
-                <p>Visualizza le informazioni meteorologiche aggiornate.</p>
-                <a href="{{ url_for('weather') }}">Vai al Weather</a>
-            </section>
-            {% if wikijs_url %}
-            <section id="wikijs-card" class="link-card">
-                <h2>Knowledge Base</h2>
-                <p>Apri la knowledge base personale tramite l'area autenticata.</p>
-                <a href="{{ url_for('wiki') }}" target="_blank" rel="noopener noreferrer">Vai alla Wiki</a>
-            </section>
-            {% endif %}
+<body class="app-body">
+  <div class="dashboard-shell">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}" aria-label="Pi Control Center">
+        <span class="brand-mark" aria-hidden="true">π</span>
+        <span>
+          <strong>Pi Control Center</strong>
+          <small>Infrastructure &amp; device monitor</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span class="user-chip"><span class="status-dot online"></span>{{ username }}</span>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="button button-ghost" type="submit">Esci</button>
+        </form>
+      </div>
+    </header>
 
-            <section id="lidar-heatmap">
-  <h2>Occupancy Grid (Heatmap)</h2>
-  <div style="position:relative; width:100%; height:0; padding-bottom:100%;">
-    <!-- wrapper 1:1 per rendere il canvas quadrato e responsive -->
-    <canvas id="heatmapChart" 
-            style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
-  </div>
-</section>
+    <main>
+      <section class="page-heading" aria-labelledby="dashboard-title">
+        <div>
+          <p class="eyebrow">Raspberry Pi · live</p>
+          <h1 id="dashboard-title">Panoramica operativa</h1>
+          <p class="page-copy">Sistema, rete e dispositivi GDP in un’unica vista.</p>
         </div>
-    </div>
-    
-    <script>
-    // Funzione per aggiornare le informazioni di sistema
-    async function fetchSystemInfo() {
-        try {
-            const response = await fetch('/api/system');
-            const data = await response.json();
-            const systemDataDiv = document.getElementById('system-data');
-            systemDataDiv.innerHTML = `
-                <p><strong>CPU Temp:</strong> ${data.cpu_temperature} °C</p>
-                <p><strong>Voltage:</strong> ${data.voltage} V</p>
-                <p><strong>Memory:</strong> ${(data.memory.used / 1048576).toFixed(2)} MB usati di ${(data.memory.total / 1048576).toFixed(2)} MB</p>
-                <p><strong>Disk:</strong> ${(data.disk.used / 1073741824).toFixed(2)} GB usati di ${(data.disk.total / 1073741824).toFixed(2)} GB</p>
-            `;
-        } catch (error) {
-            console.error('Error fetching system info:', error);
-        }
-    }
-    fetchSystemInfo();
-    setInterval(fetchSystemInfo, 30000);
+        <div class="refresh-state" id="refresh-state" aria-live="polite">
+          <span class="status-dot loading"></span>
+          <span id="last-refresh">Connessione…</span>
+        </div>
+      </section>
 
-    function formatServiceState(service) {
-        if (!service.loaded) return 'non installato';
-        const pid = service.main_pid ? ` · PID ${service.main_pid}` : '';
-        return `${service.active_state}/${service.sub_state}${pid}`;
-    }
+      <section class="metric-grid" aria-label="Metriche di sistema">
+        <article class="metric-card">
+          <div class="metric-heading"><span>CPU</span><span aria-hidden="true">°C</span></div>
+          <strong class="metric-value" id="cpu-value">—</strong>
+          <div class="meter"><span id="cpu-meter"></span></div>
+          <small id="cpu-detail">Temperatura non disponibile</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Memoria</span><span aria-hidden="true">RAM</span></div>
+          <strong class="metric-value" id="memory-value">—</strong>
+          <div class="meter"><span id="memory-meter"></span></div>
+          <small id="memory-detail">In attesa dei dati</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Disco</span><span aria-hidden="true">SSD</span></div>
+          <strong class="metric-value" id="disk-value">—</strong>
+          <div class="meter"><span id="disk-meter"></span></div>
+          <small id="disk-detail">In attesa dei dati</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Alimentazione</span><span aria-hidden="true">V</span></div>
+          <strong class="metric-value" id="voltage-value">—</strong>
+          <div class="metric-state" id="voltage-detail">Sensore ADC non rilevato</div>
+        </article>
+      </section>
 
-    function setGdpStatusUnavailable(message) {
-        const badge = document.getElementById('gdp-overall-badge');
-        badge.className = 'status-badge status-offline';
-        badge.textContent = 'Non disponibile';
-        document.getElementById('gdp-status-detail').textContent = message;
-    }
+      <div class="dashboard-grid">
+        <section class="panel panel-wide" id="gdp-service-card" aria-labelledby="gdp-title" aria-live="polite">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">IoT stack</p>
+              <h2 id="gdp-title">Generic Device Protocol</h2>
+            </div>
+            <span id="gdp-overall-badge" class="status-badge status-loading">Verifica…</span>
+          </div>
+          <div class="service-grid">
+            <div><span>GDP server</span><strong id="gdp-server-status">In attesa</strong></div>
+            <div><span>MQTT service</span><strong id="gdp-mqtt-service-status">In attesa</strong></div>
+            <div><span>Broker</span><strong id="gdp-broker-status">In attesa</strong></div>
+            <div><span>Device online</span><strong id="gdp-device-count">—</strong></div>
+          </div>
+          <div id="gdp-devices" class="device-list">
+            <p class="empty-state">Nessun dato device ricevuto.</p>
+          </div>
+          <p id="gdp-status-detail" class="panel-detail"></p>
+        </section>
 
-    async function fetchGdpServiceStatus() {
-        try {
-            const response = await fetch('/api/services/gdp', {
-                headers: { 'Accept': 'application/json' }
-            });
-            if (!response.ok || response.redirected) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const data = await response.json();
-            const badge = document.getElementById('gdp-overall-badge');
-            badge.className = `status-badge ${data.healthy ? 'status-online' : 'status-offline'}`;
-            badge.textContent = data.healthy ? 'Operativo' : 'Degradato';
-            document.getElementById('gdp-server-status').textContent =
-                formatServiceState(data.gdp_server);
-            document.getElementById('gdp-mqtt-service-status').textContent =
-                formatServiceState(data.mqtt_service);
-            document.getElementById('gdp-broker-status').textContent = data.broker.reachable
-                ? `${data.broker.host}:${data.broker.port} raggiungibile`
-                : `${data.broker.host}:${data.broker.port} non raggiungibile`;
-            document.getElementById('gdp-status-detail').textContent =
-                `Ultimo controllo: ${new Date(data.checked_at).toLocaleString()}`;
-        } catch (error) {
-            console.error('Error fetching GDP service status:', error);
-            setGdpStatusUnavailable('Impossibile leggere lo stato del servizio.');
-        }
-    }
-    fetchGdpServiceStatus();
-    setInterval(fetchGdpServiceStatus, 10000);
+        <section class="panel" aria-labelledby="network-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Host</p><h2 id="network-title">Traffico di rete</h2></div>
+            <span class="panel-kpi" id="network-interface">—</span>
+          </div>
+          <div class="chart-wrap"><canvas id="networkChart">Grafico traffico rete</canvas></div>
+          <div class="chart-legend">
+            <span><i class="legend-dot rx"></i>RX <strong id="network-rx">—</strong></span>
+            <span><i class="legend-dot tx"></i>TX <strong id="network-tx">—</strong></span>
+          </div>
+        </section>
 
-    // Creazione e aggiornamento del grafico di rete tramite Chart.js
-    let networkChart;
-    async function fetchNetworkData() {
-        try {
-            const response = await fetch('/api/network');
-            const data = await response.json();
-            // Uso del primo dispositivo disponibile (es. "eth0")
-            const iface = Object.keys(data)[0];
-            const ifaceData = data[iface];
-            
-            const chartData = {
-                labels: ['Bytes Sent', 'Bytes Recv'],
-                datasets: [{
-                    label: iface,
-                    data: [ifaceData.bytes_sent, ifaceData.bytes_recv],
-                    backgroundColor: ['rgba(247,202,24,0.6)', 'rgba(75,192,192,0.6)'],
-                    borderColor: ['rgba(247,202,24,1)', 'rgba(75,192,192,1)'],
-                    borderWidth: 1
-                }]
-            };
+        <section class="panel" aria-labelledby="sensor-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Sensors</p><h2 id="sensor-title">Storico ambientale</h2></div>
+            <span class="panel-kpi" id="sensor-count">0 campioni</span>
+          </div>
+          <div class="chart-wrap"><canvas id="sensorChart">Grafico sensori</canvas></div>
+          <p class="panel-detail" id="sensor-empty">In attesa dei primi campioni.</p>
+        </section>
 
-            if (networkChart) {
-                networkChart.data = chartData;
-                networkChart.update();
-            } else {
-                const ctx = document.getElementById('networkChart').getContext('2d');
-                networkChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: chartData,
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching network data:', error);
-        }
-    }
-    fetchNetworkData();
-    setInterval(fetchNetworkData, 10000);
-    </script>
-    <script>
-        let sensorChart;
-        async function fetchSensorData() {
-          try {
-            const res = await fetch('/api/irrigation_data');
-            const data = await res.json();
-            const labels        = data.map(d => new Date(d.time).toLocaleTimeString());
-            const moistureData  = data.map(d => d.moisture);
-            const lightData     = data.map(d => d.light);
-        
-            const chartData = {
-              labels,
-              datasets: [
-                {
-                  label: 'Moisture (%)',
-                  data: moistureData,
-                  yAxisID: 'y-moisture',
-                  borderColor: 'rgb(247,202,24)',
-                  fill: false
-                },
-                {
-                  label: 'Light (lux)',
-                  data: lightData,
-                  yAxisID: 'y-light',
-                  borderColor: 'rgb(75,192,192)',
-                  fill: false
-                }
-              ]
-            };
-        
-            const config = {
-              type: 'line',
-              data: chartData,
-              options: {
-                interaction: { mode: 'index', intersect: false },
-                stacked: false,
-                scales: {
-                  'y-moisture': {
-                    type: 'linear',
-                    position: 'left',
-                    beginAtZero: true,
-                    title: { display: true, text: '%' }
-                  },
-                  'y-light': {
-                    type: 'linear',
-                    position: 'right',
-                    beginAtZero: true,
-                    grid: { drawOnChartArea: false },
-                    title: { display: true, text: 'lux' }
-                  }
-                }
-              }
-            };
-        
-            if (sensorChart) {
-              sensorChart.data = chartData;
-              sensorChart.update();
-            } else {
-              const ctx = document.getElementById('sensorChart').getContext('2d');
-              sensorChart = new Chart(ctx, config);
-            }
-          } catch (err) {
-            console.error('Error fetching sensor data:', err);
-          }
-        }
-        fetchSensorData();
-        setInterval(fetchSensorData, 5000);
-        </script>
-        <script>
+        <section class="panel" aria-labelledby="heatmap-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LiDAR</p><h2 id="heatmap-title">Occupancy grid</h2></div>
+            <span class="panel-kpi" id="heatmap-state">In attesa</span>
+          </div>
+          <div class="heatmap-wrap"><canvas id="heatmapChart">Mappa di occupazione</canvas></div>
+        </section>
 
-        const X_MIN = -50, X_MAX = 50, Y_MIN = -50, Y_MAX = 50, RESOLUTION = 5;
-        const M = Math.ceil((X_MAX - X_MIN) / RESOLUTION);
-        const N = Math.ceil((Y_MAX - Y_MIN) / RESOLUTION);
-
-
-        const matrixSizePlugin = {
-          id: 'matrixSizePlugin',
-          beforeDatasetDraw(chart) {
-            const w = chart.chartArea.right  - chart.chartArea.left;
-            const h = chart.chartArea.bottom - chart.chartArea.top;
-            chart.data.datasets.forEach(ds => {
-              ds.width  = w / M;
-              ds.height = h / N;
-            });
-          }
-        };
-        Chart.register(matrixSizePlugin);
-
-        let heatmapChart = null;
-
-
-        async function fetchHeatmap() {
-          const res = await fetch('/api/occupancy_map.json');
-          const mat = await res.json();
-
-
-          const matrixData = [];
-          for (let i = 0; i < N; i++) {
-            for (let j = 0; j < M; j++) {
-              matrixData.push({
-                x: j,
-                y: i,
-                v: mat[N - 1 - i][j]
-              });
-            }
-          }
-
-          const canvas = document.getElementById('heatmapChart');
-
-          const existing = Chart.getChart(canvas);
-          if (existing) existing.destroy();
-
-
-          heatmapChart = new Chart(canvas.getContext('2d'), {
-            type: 'matrix',
-            data: {
-              datasets: [{
-                label: 'Occupancy',
-                data: matrixData,
-                backgroundColor(ctx) {
-                  const v = ctx.dataset.data[ctx.dataIndex].v;
-                  const r = Math.round(255 * v);
-                  const b = 255 - r;
-                  return `rgba(${r},0,${b},0.8)`;
-                },
-                borderWidth: 0.5,
-                borderColor: 'rgba(255,255,255,0.2)'
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                x: { display: false },
-                y: { display: false }
-              },
-              plugins: {
-                legend:  { display: false },
-                tooltip: {
-                  callbacks: {
-                    label(ctx) {
-                      const { x, y, v } = ctx.raw;
-                      const xr = (X_MIN + x * RESOLUTION).toFixed(0);
-                      const yr = (Y_MAX - y * RESOLUTION).toFixed(0);
-                      return `(${xr}, ${yr}) → ${ (v*100).toFixed(1) }%`;
-                    }
-                  }
-                }
-              }
-            }
-          });
-        }
-
-
-        fetchHeatmap();
-        setInterval(fetchHeatmap, 6000);
-    </script>
-        
-  </body>
+        <section class="panel" aria-labelledby="quick-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Navigation</p><h2 id="quick-title">Accesso rapido</h2></div>
+          </div>
+          <nav class="quick-links" aria-label="Servizi del monitor">
+            <a href="{{ url_for('stream_face') }}"><span>Camera &amp; recognition</span><b>Apri →</b></a>
+            <a href="{{ url_for('weather') }}"><span>Weather station</span><b>Apri →</b></a>
+            {% if wikijs_url %}
+            <a href="{{ url_for('wiki') }}" target="_blank" rel="noopener noreferrer"><span>Knowledge base</span><b>Apri ↗</b></a>
+            {% endif %}
+            <a href="{{ url_for('portfolio') }}"><span>Sito pubblico</span><b>Apri →</b></a>
+          </nav>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
 </html>

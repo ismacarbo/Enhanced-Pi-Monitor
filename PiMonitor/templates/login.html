@@ -1,24 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Accesso · Pi Control Center</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-  <div class="login-container">
-    <h2>Login</h2>
-    {% if error %}
-      <p style="color:red;">{{ error }}</p>
-    {% endif %}
-    <form action="/login" method="post">
-      <label>Username:</label><br>
-      <input type="text" name="username" required><br>
-      <label>Password:</label><br>
-      <input type="password" name="password" required><br><br>
-      <input type="submit" value="Log In">
-    </form>
-  </div>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="login-intro">
+      <a class="brand" href="{{ url_for('portfolio') }}">
+        <span class="brand-mark" aria-hidden="true">π</span>
+        <span><strong>Pi Control Center</strong><small>Private infrastructure</small></span>
+      </a>
+      <div>
+        <p class="eyebrow">Area protetta</p>
+        <h1>Il tuo homelab,<br>senza rumore.</h1>
+        <p>Controlla salute del Raspberry Pi, servizi, rete e device embedded da una dashboard unica.</p>
+      </div>
+      <a class="back-link" href="{{ url_for('portfolio') }}">← Torna al sito pubblico</a>
+    </section>
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">Autenticazione</p>
+        <h2 id="login-title">Bentornato</h2>
+        <p class="form-copy">Inserisci le credenziali del monitor.</p>
+        {% if error %}
+        <div class="form-error" role="alert">{{ error }}</div>
+        {% endif %}
+        <form action="{{ url_for('login') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="next" value="{{ next_url or '' }}">
+          <label for="username">Username</label>
+          <input id="username" type="text" name="username" autocomplete="username" required autofocus>
+          <label for="password">Password</label>
+          <input id="password" type="password" name="password" autocomplete="current-password" required>
+          <button class="button button-primary" type="submit">Accedi alla dashboard</button>
+        </form>
+        <p class="login-note"><span class="status-dot online"></span>Connessione protetta · sessione 30 minuti</p>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

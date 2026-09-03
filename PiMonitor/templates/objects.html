@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Camera · Pi Control Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+  <main class="utility-shell">
+    <header class="utility-header">
+      <div><p class="eyebrow">Vision node</p><h1>Camera &amp; recognition</h1></div>
+      <a class="button button-ghost" href="{{ url_for('dashboard') }}">← Dashboard</a>
+    </header>
+    <section class="camera-card">
+      <img src="{{ url_for('video_feed') }}" alt="Stream video in tempo reale">
+      <div>
+        <h2>Stream live</h2>
+        <p>Il feed è disponibile solo durante la sessione autenticata.</p>
+        <a class="button button-primary" href="{{ url_for('register') }}">Registra un volto</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
