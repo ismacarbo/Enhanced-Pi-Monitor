@@ -11,7 +11,7 @@ let networkChart;
 let sensorChart;
 let heatmapChart;
 let previousNetworkSample;
-let refreshFailed = false;
+const sourceHealth = new Map();
 
 Chart.defaults.color = COLORS.text;
 Chart.defaults.borderColor = COLORS.grid;
@@ -53,8 +53,9 @@ function formatBytes(value, suffix = "") {
   return `${amount.toFixed(digits)} ${units[index]}${suffix}`;
 }
 
-function setRefreshState(ok) {
-  refreshFailed = refreshFailed || !ok;
+function setRefreshState(source, ok) {
+  sourceHealth.set(source, ok);
+  const refreshFailed = Array.from(sourceHealth.values()).some((value) => !value);
   const state = document.getElementById("refresh-state");
   const dot = state?.querySelector(".status-dot");
   if (dot) dot.className = `status-dot ${refreshFailed ? "offline" : "online"}`;
@@ -85,10 +86,10 @@ async function fetchSystemInfo() {
     const voltage = Number.isFinite(data.voltage) ? data.voltage : null;
     text("voltage-value", voltage === null ? "N/D" : `${voltage.toFixed(2)} V`);
     text("voltage-detail", voltage === null ? "Sensore ADC non rilevato" : voltage < 4.8 ? "Tensione sotto soglia" : "Alimentazione nella norma");
-    setRefreshState(true);
+    setRefreshState("system", true);
   } catch (error) {
     console.error(error);
-    setRefreshState(false);
+    setRefreshState("system", false);
   }
 }
 
@@ -150,7 +151,7 @@ function renderDevices(snapshot) {
     const capabilities = document.createElement("p");
     capabilities.className = "device-capabilities";
     const capabilityCount = Array.isArray(device.capabilities) ? device.capabilities.length : 0;
-    capabilities.textContent = `${capabilityCount} capabilit${capabilityCount === 1 ? "à" : "à"} dichiarate`;
+    capabilities.textContent = `${capabilityCount} capacità dichiarate`;
     card.append(header, meta, metrics, capabilities);
     container.append(card);
   });
@@ -167,14 +168,14 @@ async function fetchGdpStatus() {
     text("gdp-broker-status", data.broker?.reachable ? `${data.broker.host}:${data.broker.port} online` : "non raggiungibile");
     renderDevices(data.device_snapshot);
     text("gdp-status-detail", `Ultimo controllo ${new Date(data.checked_at).toLocaleString("it-IT")}`);
-    setRefreshState(true);
+    setRefreshState("gdp", true);
   } catch (error) {
     console.error(error);
     const badge = document.getElementById("gdp-overall-badge");
     badge.className = "status-badge status-offline";
     badge.textContent = "Non disponibile";
     text("gdp-status-detail", "Impossibile leggere lo stato dello stack GDP.");
-    setRefreshState(false);
+    setRefreshState("gdp", false);
   }
 }
 
@@ -229,10 +230,10 @@ async function fetchNetworkData() {
       networkChart.data.datasets.forEach((dataset) => dataset.data.shift());
     }
     networkChart.update();
-    setRefreshState(true);
+    setRefreshState("network", true);
   } catch (error) {
     console.error(error);
-    setRefreshState(false);
+    setRefreshState("network", false);
   }
 }
 
@@ -259,10 +260,10 @@ async function fetchSensorData() {
       sensorChart.data = chartData;
       sensorChart.update();
     }
-    setRefreshState(true);
+    setRefreshState("sensors", true);
   } catch (error) {
     console.error(error);
-    setRefreshState(false);
+    setRefreshState("sensors", false);
   }
 }
 
@@ -294,16 +295,15 @@ async function fetchHeatmap() {
       heatmapChart.update("none");
     }
     text("heatmap-state", `${columns} × ${rows}`);
-    setRefreshState(true);
+    setRefreshState("heatmap", true);
   } catch (error) {
     console.error(error);
     text("heatmap-state", "Non disponibile");
-    setRefreshState(false);
+    setRefreshState("heatmap", false);
   }
 }
 
 async function refreshAll() {
-  refreshFailed = false;
   await Promise.allSettled([fetchSystemInfo(), fetchGdpStatus(), fetchNetworkData(), fetchSensorData(), fetchHeatmap()]);
 }
 
