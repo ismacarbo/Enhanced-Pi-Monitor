@@ -52,6 +52,10 @@ class PublicPresentationTests(unittest.TestCase):
                 self.assertIn("css/styleStatic.css", html)
                 self.assertIn("js/public.js", html)
                 self.assertIn("Control center", html)
+                self.assertIn(
+                    f'<link rel="canonical" href="https://ismacarbo.org{path}">',
+                    html,
+                )
 
     def test_control_center_link_keeps_dashboard_protected(self):
         response = self.client.get("/dashboard")

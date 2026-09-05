@@ -8,7 +8,7 @@
 
 const char* ssid="";
 const char* password="";
-const char* server="https://ismaelecarbo.duckdns.org";
+const char* server="https://ismacarbo.org";
 
 BH1750 lightMeter;
 
