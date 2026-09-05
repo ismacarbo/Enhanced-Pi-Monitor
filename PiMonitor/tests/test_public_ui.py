@@ -52,13 +52,14 @@ class PublicPresentationTests(unittest.TestCase):
                 self.assertIn("css/styleStatic.css", html)
                 self.assertIn("js/public.js", html)
                 self.assertEqual(html.count("v=dashboard-20260905"), 2)
-                self.assertIn("Control center", html)
+                self.assertNotIn("Control center", html)
+                self.assertNotIn('href="/dashboard"', html)
                 self.assertIn(
                     f'<link rel="canonical" href="https://ismacarbo.org{path}">',
                     html,
                 )
 
-    def test_control_center_link_keeps_dashboard_protected(self):
+    def test_dashboard_remains_protected_when_not_publicly_linked(self):
         response = self.client.get("/dashboard")
 
         self.assertEqual(response.status_code, 302)

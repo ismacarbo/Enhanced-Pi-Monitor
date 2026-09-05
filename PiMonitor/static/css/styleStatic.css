@@ -178,11 +178,8 @@ img { max-width: 100%; }
 .button-ghost:hover { border-color: var(--line-strong); background: rgba(255, 255, 255, .055); }
 .button-text { min-height: auto; padding: 0; color: var(--accent); }
 .button-text:hover { color: var(--accent-bright); transform: translateX(2px); }
-.site-dashboard-link { min-height: 40px; padding-inline: 14px; font-size: .74rem; }
-
 .status-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--muted); }
 .status-dot.online { background: var(--green); box-shadow: 0 0 0 4px rgba(101, 212, 154, .12); }
-.site-dashboard-link .status-dot.online { background: #182015; box-shadow: none; }
 
 .site-menu-toggle:focus-visible,
 .button:focus-visible,
@@ -348,7 +345,6 @@ h3 { margin-bottom: 12px; font-size: 1.08rem; letter-spacing: -.022em; line-heig
   .site-nav { align-items: stretch; flex-direction: column; }
   .site-nav a { padding: 14px 5px; border-bottom: 1px solid var(--line); border-radius: 0; font-size: 1rem; }
   .site-nav a.active::after { right: auto; bottom: -1px; left: 5px; width: 46px; }
-  .site-dashboard-link { align-self: stretch; min-height: 48px; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-console { max-width: 620px; transform: none; }
   .about-grid { grid-template-columns: 1fr; }
