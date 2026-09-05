@@ -99,11 +99,12 @@ function serviceState(service) {
   return `${service.active_state}/${service.sub_state}${pid}`;
 }
 
-function addDeviceMetric(container, label, value, suffix = "") {
+function addDeviceMetric(container, label, value, suffix = "", tone = "") {
   if (value === undefined || value === null || value === "") return;
   const item = document.createElement("span");
   const normalized = typeof value === "number" ? Math.round(value * 10) / 10 : value;
   item.textContent = `${label} ${normalized}${suffix}`;
+  if (tone) item.classList.add(`metric-${tone}`);
   container.append(item);
 }
 
@@ -144,8 +145,15 @@ function renderDevices(snapshot) {
     addDeviceMetric(metrics, "Temp", telemetry.temperature_c, " °C");
     addDeviceMetric(metrics, "Umidità", telemetry.humidity_percent, "%");
     addDeviceMetric(metrics, "Suolo", telemetry.soil_moisture_percent, "%");
+    addDeviceMetric(metrics, "Serbatoio", telemetry.tank_percent, "%", "water");
+    addDeviceMetric(metrics, "Distanza", telemetry.tank_distance_cm, " cm");
+    addDeviceMetric(metrics, "Batteria", telemetry.battery_percent, "%", "power");
+    addDeviceMetric(metrics, "Tensione", telemetry.battery_voltage_v, " V");
     addDeviceMetric(metrics, "Luce", telemetry.light_lux, " lx");
-    addDeviceMetric(metrics, "Pompa", state.pump?.replace("PUMP_STATE_", "").toLowerCase());
+    const pumpState = state.pump?.replace("PUMP_STATE_", "").toLowerCase();
+    addDeviceMetric(metrics, "Pompa", pumpState, "", pumpState === "on" ? "active" : "");
+    addDeviceMetric(metrics, "Modo", state.mode?.replace("IRRIGATION_MODE_", "").toLowerCase());
+    if (state.auto_irrigation_running) addDeviceMetric(metrics, "Auto", "in esecuzione", "", "active");
     if (!metrics.childElementCount) addDeviceMetric(metrics, "Health", device.health?.replace("DEVICE_HEALTH_", "").toLowerCase() || "in attesa");
 
     const capabilities = document.createElement("p");

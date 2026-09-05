@@ -159,6 +159,9 @@ h2 { margin-bottom: 0; font-size: 1.07rem; letter-spacing: -.025em; }
 .device-meta { margin: 5px 0 13px; color: var(--muted); font-size: .7rem; }
 .device-metrics { display: flex; flex-wrap: wrap; gap: 7px; }
 .device-metrics span { padding: 6px 8px; border-radius: 8px; background: rgba(255, 255, 255, .035); color: #c8d1dc; font-size: .72rem; }
+.device-metrics .metric-water { background: rgba(79, 209, 197, .1); color: var(--cyan); }
+.device-metrics .metric-power { background: rgba(242, 201, 76, .1); color: var(--accent); }
+.device-metrics .metric-active { background: rgba(101, 212, 154, .12); color: var(--green); }
 .device-capabilities { margin: 12px 0 0; color: var(--muted); font-size: .68rem; }
 .empty-state { grid-column: 1 / -1; margin: 7px 0 2px; padding: 16px; border: 1px dashed #343d48; border-radius: 12px; color: var(--muted); text-align: center; font-size: .78rem; }
 

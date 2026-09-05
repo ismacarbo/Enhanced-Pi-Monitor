@@ -90,8 +90,15 @@ class ServiceStatusTests(unittest.TestCase):
                                 "reported_online": True,
                                 "device_type": "greenhouse-node",
                                 "capabilities": ["environment.temperature"],
-                                "telemetry": {"temperature_c": 22.5},
-                                "state": {"pump": "PUMP_STATE_OFF"},
+                                "telemetry": {
+                                    "temperature_c": 22.5,
+                                    "tank_percent": 76.5,
+                                    "battery_voltage_v": 3.92,
+                                },
+                                "state": {
+                                    "pump": "PUMP_STATE_OFF",
+                                    "mode": "IRRIGATION_MODE_AUTOMATIC",
+                                },
                             }
                         },
                     }
@@ -110,6 +117,13 @@ class ServiceStatusTests(unittest.TestCase):
         self.assertEqual(device_snapshot["online_count"], 1)
         self.assertEqual(
             device_snapshot["devices"][0]["telemetry"]["temperature_c"], 22.5
+        )
+        self.assertEqual(
+            device_snapshot["devices"][0]["telemetry"]["tank_percent"], 76.5
+        )
+        self.assertEqual(
+            device_snapshot["devices"][0]["state"]["mode"],
+            "IRRIGATION_MODE_AUTOMATIC",
         )
 
 
