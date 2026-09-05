@@ -84,6 +84,11 @@ class LoginLifecycleTests(unittest.TestCase):
         register_core_routes(self.app)
         self.client = self.app.test_client()
 
+    def test_device_detail_redirects_to_login(self):
+        response = self.client.get("/devices/greenhouse-01")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login?next=", response.headers["Location"])
+
     def test_login_requires_csrf_and_creates_session(self):
         self.assertEqual(
             self.client.post(
@@ -107,6 +112,26 @@ class LoginLifecycleTests(unittest.TestCase):
         self.assertTrue(response.headers["Location"].endswith("/dashboard"))
         with self.client.session_transaction() as session:
             self.assertEqual(session["username"], config.USERNAME)
+
+    def test_authenticated_user_can_open_device_diagnostics(self):
+        with self.client.session_transaction() as session:
+            session["username"] = config.USERNAME
+
+        response = self.client.get("/devices/greenhouse-01")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("greenhouse-01", html)
+        self.assertIn("device_detail.js", html)
+        self.assertIn("Snapshot normalizzato", html)
+
+    def test_device_diagnostics_rejects_invalid_identifier(self):
+        with self.client.session_transaction() as session:
+            session["username"] = config.USERNAME
+
+        response = self.client.get("/devices/not%20valid")
+
+        self.assertEqual(response.status_code, 404)
 
 
 if __name__ == "__main__":

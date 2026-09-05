@@ -89,6 +89,18 @@ class ServiceStatusTests(unittest.TestCase):
                                 "last_seen": now,
                                 "reported_online": True,
                                 "device_type": "greenhouse-node",
+                                "hardware_version": "esp32-actuator-v1",
+                                "firmware_version": "1.1.3",
+                                "status_message": "device ready",
+                                "uptime_ms": 120000,
+                                "free_heap_bytes": 243396,
+                                "last_message": {
+                                    "message_id": 18446744073709551615,
+                                    "category": "MESSAGE_CATEGORY_TELEMETRY",
+                                    "domain_id": 102,
+                                    "domain_version": 1,
+                                    "message_type": 1,
+                                },
                                 "capabilities": ["environment.temperature"],
                                 "telemetry": {
                                     "temperature_c": 22.5,
@@ -125,6 +137,12 @@ class ServiceStatusTests(unittest.TestCase):
             device_snapshot["devices"][0]["state"]["mode"],
             "IRRIGATION_MODE_AUTOMATIC",
         )
+        device = device_snapshot["devices"][0]
+        self.assertEqual(device["hardware_version"], "esp32-actuator-v1")
+        self.assertEqual(device["free_heap_bytes"], 243396)
+        self.assertEqual(
+            device["last_message"]["message_id"], "18446744073709551615"
+        )
 
 
 class ServiceStatusRouteTests(unittest.TestCase):
@@ -149,6 +167,14 @@ class ServiceStatusRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.get_json(), {"error": "authentication_required"})
 
+        device_response = self.client.get(
+            "/api/services/gdp/devices/greenhouse-01"
+        )
+        self.assertEqual(device_response.status_code, 401)
+        self.assertEqual(
+            device_response.get_json(), {"error": "authentication_required"}
+        )
+
     @patch("routes.services.get_gdp_stack_status")
     def test_authenticated_status_request_returns_json(self, get_status):
         get_status.return_value = {"healthy": True}
@@ -158,6 +184,42 @@ class ServiceStatusRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"healthy": True})
+
+    @patch("routes.services.get_gdp_stack_status")
+    def test_authenticated_device_status_returns_selected_device(self, get_status):
+        get_status.return_value = {
+            "checked_at": "2026-09-05T16:00:00+00:00",
+            "healthy": True,
+            "gdp_server": {"active": True},
+            "mqtt_service": {"active": True},
+            "broker": {"reachable": True},
+            "device_snapshot": {
+                "updated_at": "2026-09-05T15:59:59+00:00",
+                "devices": [
+                    {"device_id": "greenhouse-01", "online": True},
+                    {"device_id": "robot-01", "online": False},
+                ],
+            },
+        }
+        self.authenticate()
+
+        response = self.client.get("/api/services/gdp/devices/greenhouse-01")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json()["device"]["device_id"], "greenhouse-01"
+        )
+        self.assertNotIn("device_snapshot", response.get_json())
+
+    @patch("routes.services.get_gdp_stack_status")
+    def test_device_status_returns_404_for_unknown_device(self, get_status):
+        get_status.return_value = {"device_snapshot": {"devices": []}}
+        self.authenticate()
+
+        response = self.client.get("/api/services/gdp/devices/missing-01")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json(), {"error": "device_not_found"})
 
 
 if __name__ == "__main__":

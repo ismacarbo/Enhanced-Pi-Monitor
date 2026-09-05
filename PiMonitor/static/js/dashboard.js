@@ -122,8 +122,10 @@ function renderDevices(snapshot) {
   }
 
   devices.forEach((device) => {
-    const card = document.createElement("article");
-    card.className = "device-card";
+    const card = document.createElement("a");
+    card.className = "device-card device-card-link";
+    card.href = `/devices/${encodeURIComponent(device.device_id)}`;
+    card.setAttribute("aria-label", `Apri diagnostica di ${device.device_id}`);
     const header = document.createElement("header");
     const title = document.createElement("h3");
     title.textContent = device.device_id || "device sconosciuto";
@@ -160,7 +162,10 @@ function renderDevices(snapshot) {
     capabilities.className = "device-capabilities";
     const capabilityCount = Array.isArray(device.capabilities) ? device.capabilities.length : 0;
     capabilities.textContent = `${capabilityCount} capacità dichiarate`;
-    card.append(header, meta, metrics, capabilities);
+    const open = document.createElement("span");
+    open.className = "device-open";
+    open.textContent = "Apri diagnostica →";
+    card.append(header, meta, metrics, capabilities, open);
     container.append(card);
   });
 }

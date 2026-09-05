@@ -180,6 +180,7 @@ def _read_device_snapshot(path_value, checked_at, stale_after):
         telemetry = raw.get("telemetry")
         state = raw.get("state")
         capabilities = raw.get("capabilities")
+        last_message = raw.get("last_message")
         devices.append(
             {
                 "device_id": device_id[:64],
@@ -192,6 +193,15 @@ def _read_device_snapshot(path_value, checked_at, stale_after):
                 "firmware_version": _safe_text(
                     raw.get("firmware_version"), 64
                 ),
+                "hardware_version": _safe_text(
+                    raw.get("hardware_version"), 64
+                ),
+                "status_message": _safe_text(raw.get("status_message"), 160),
+                "uptime_ms": _safe_nonnegative_int(raw.get("uptime_ms")),
+                "free_heap_bytes": _safe_nonnegative_int(
+                    raw.get("free_heap_bytes")
+                ),
+                "last_message": _safe_last_message(last_message),
                 "capabilities": [
                     item[:96]
                     for item in capabilities[:16]
@@ -227,6 +237,32 @@ def _parse_timestamp(value):
 
 def _safe_text(value, limit):
     return value[:limit] if isinstance(value, str) else None
+
+
+def _safe_nonnegative_int(value):
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return min(value, 9_007_199_254_740_991)
+
+
+def _safe_last_message(value):
+    if not isinstance(value, dict):
+        return {}
+    message_id = value.get("message_id")
+    return {
+        # A uint64 cannot be represented exactly by JavaScript. Keep the ID as text.
+        "message_id": (
+            str(message_id)
+            if isinstance(message_id, int)
+            and not isinstance(message_id, bool)
+            and message_id >= 0
+            else None
+        ),
+        "category": _safe_text(value.get("category"), 64),
+        "domain_id": _safe_nonnegative_int(value.get("domain_id")),
+        "domain_version": _safe_nonnegative_int(value.get("domain_version")),
+        "message_type": _safe_nonnegative_int(value.get("message_type")),
+    }
 
 
 def _safe_mapping(value):

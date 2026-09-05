@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+import re
 
 from flask import Response, abort, redirect, render_template, request, session, url_for
 
@@ -82,6 +83,18 @@ def register_core_routes(app):
     def dashboard(user):
         return render_template(
             "dashboard.html", username=user, csrf_token=csrf_token()
+        )
+
+    @app.route("/devices/<device_id>")
+    @token_required
+    def device_detail(user, device_id):
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", device_id):
+            abort(404)
+        return render_template(
+            "device_detail.html",
+            username=user,
+            csrf_token=csrf_token(),
+            device_id=device_id,
         )
 
     @app.route("/weather")

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ device_id }} · Pi Control Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='device-detail-20260905') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/device_detail.js', v='device-detail-20260905') }}"></script>
+</head>
+<body class="app-body" data-device-id="{{ device_id }}">
+  <div class="dashboard-shell">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}" aria-label="Torna al Pi Control Center">
+        <span class="brand-mark" aria-hidden="true">π</span>
+        <span>
+          <strong>Pi Control Center</strong>
+          <small>Device diagnostics</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <a class="button button-ghost" href="{{ url_for('dashboard') }}">← Panoramica</a>
+        <span class="user-chip"><span class="status-dot online"></span>{{ username }}</span>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="button button-ghost" type="submit">Esci</button>
+        </form>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="page-heading device-page-heading" aria-labelledby="device-title">
+        <div>
+          <p class="eyebrow">GDP device · live telemetry</p>
+          <div class="device-title-row">
+            <h1 id="device-title">{{ device_id }}</h1>
+            <span id="device-online-badge" class="status-badge status-loading">Connessione…</span>
+          </div>
+          <p class="page-copy" id="device-identity">Caricamento identità dispositivo…</p>
+        </div>
+        <div class="refresh-state" id="device-refresh-state" aria-live="polite">
+          <span class="status-dot loading"></span>
+          <span id="device-last-refresh">Connessione…</span>
+        </div>
+      </section>
+
+      <div id="device-not-found" class="notice notice-error" role="alert" hidden>
+        Il dispositivo richiesto non è presente nello snapshot GDP corrente.
+      </div>
+
+      <section class="metric-grid" aria-label="Telemetria principale">
+        <article class="metric-card">
+          <div class="metric-heading"><span>Suolo</span><span aria-hidden="true">%</span></div>
+          <strong class="metric-value" id="soil-value">—</strong>
+          <div class="meter"><span id="soil-meter"></span></div>
+          <small id="soil-detail">In attesa del sensore</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Ambiente</span><span aria-hidden="true">°C / RH</span></div>
+          <strong class="metric-value" id="temperature-value">—</strong>
+          <div class="metric-secondary" id="humidity-value">Umidità —</div>
+          <small id="environment-detail">In attesa dei sensori</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Serbatoio</span><span aria-hidden="true">H₂O</span></div>
+          <strong class="metric-value" id="tank-value">—</strong>
+          <div class="meter"><span id="tank-meter"></span></div>
+          <small id="tank-detail">In attesa del sensore</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-heading"><span>Batteria</span><span aria-hidden="true">V</span></div>
+          <strong class="metric-value" id="battery-value">—</strong>
+          <div class="meter"><span id="battery-meter"></span></div>
+          <small id="battery-detail">In attesa del sensore</small>
+        </article>
+      </section>
+
+      <div class="dashboard-grid device-dashboard-grid">
+        <section class="panel panel-wide" aria-labelledby="trend-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Live history</p><h2 id="trend-title">Andamento telemetria</h2></div>
+            <span class="panel-kpi" id="trend-count">0 campioni</span>
+          </div>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="deviceTrendChart">Grafico telemetria dispositivo</canvas></div>
+          <p class="panel-detail">Finestra live degli ultimi 60 aggiornamenti ricevuti mentre questa pagina è aperta.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="irrigation-state-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Irrigation</p><h2 id="irrigation-state-title">Stato attuatore</h2></div>
+            <span id="pump-badge" class="status-badge status-loading">In attesa</span>
+          </div>
+          <dl class="detail-grid">
+            <div><dt>Modo</dt><dd id="state-mode">—</dd></div>
+            <div><dt>Pompa</dt><dd id="state-pump">—</dd></div>
+            <div><dt>Auto in esecuzione</dt><dd id="state-auto">—</dd></div>
+            <div><dt>Tempo restante</dt><dd id="state-remaining">—</dd></div>
+            <div><dt>Sicurezza serbatoio</dt><dd id="state-tank-safety">—</dd></div>
+            <div><dt>Command ID attivo</dt><dd id="state-command-id">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="runtime-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Runtime</p><h2 id="runtime-title">Salute dispositivo</h2></div>
+            <span id="health-badge" class="status-badge status-loading">In attesa</span>
+          </div>
+          <dl class="detail-grid">
+            <div><dt>Ultimo contatto</dt><dd id="runtime-last-seen">—</dd></div>
+            <div><dt>Uptime</dt><dd id="runtime-uptime">—</dd></div>
+            <div><dt>Heap libero</dt><dd id="runtime-heap">—</dd></div>
+            <div><dt>Firmware</dt><dd id="runtime-firmware">—</dd></div>
+            <div><dt>Hardware</dt><dd id="runtime-hardware">—</dd></div>
+            <div><dt>Messaggio di stato</dt><dd id="runtime-status-message">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="protocol-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Protocol</p><h2 id="protocol-title">Ultimo envelope GDP</h2></div>
+          </div>
+          <dl class="detail-grid">
+            <div><dt>Message ID</dt><dd id="protocol-message-id">—</dd></div>
+            <div><dt>Categoria</dt><dd id="protocol-category">—</dd></div>
+            <div><dt>Dominio</dt><dd id="protocol-domain">—</dd></div>
+            <div><dt>Domain version</dt><dd id="protocol-domain-version">—</dd></div>
+            <div><dt>Message type</dt><dd id="protocol-message-type">—</dd></div>
+            <div><dt>Broker</dt><dd id="protocol-broker">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="capability-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Discovery</p><h2 id="capability-title">Capabilities</h2></div>
+            <span class="panel-kpi" id="capability-count">0</span>
+          </div>
+          <div id="capability-list" class="capability-list">
+            <p class="empty-state">Nessuna capability dichiarata.</p>
+          </div>
+        </section>
+
+        <section class="panel panel-wide" aria-labelledby="raw-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Diagnostics</p><h2 id="raw-title">Snapshot normalizzato</h2></div>
+            <span class="panel-kpi" id="snapshot-time">—</span>
+          </div>
+          <div class="raw-grid">
+            <div>
+              <h3>Telemetry</h3>
+              <dl id="telemetry-fields" class="raw-fields"><div><dt>Stato</dt><dd>In attesa</dd></div></dl>
+            </div>
+            <div>
+              <h3>State</h3>
+              <dl id="state-fields" class="raw-fields"><div><dt>Stato</dt><dd>In attesa</dd></div></dl>
+            </div>
+          </div>
+          <details class="json-details">
+            <summary>Mostra JSON diagnostico</summary>
+            <pre id="device-json">{}</pre>
+          </details>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
