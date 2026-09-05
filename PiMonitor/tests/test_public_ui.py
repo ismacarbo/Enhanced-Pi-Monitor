@@ -51,6 +51,7 @@ class PublicPresentationTests(unittest.TestCase):
                 self.assertIn('id="main-content"', html)
                 self.assertIn("css/styleStatic.css", html)
                 self.assertIn("js/public.js", html)
+                self.assertEqual(html.count("v=dashboard-20260905"), 2)
                 self.assertIn("Control center", html)
                 self.assertIn(
                     f'<link rel="canonical" href="https://ismacarbo.org{path}">',
