@@ -4,231 +4,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio - Ismaele Carbonari</title>
+  <meta name="description" content="Ismaele Carbonari — AI, robotics, autonomous systems and embedded software.">
+  <title>Ismaele Carbonari — AI &amp; Robotics</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+  <script defer src="{{ url_for('static', filename='js/public.js') }}"></script>
 </head>
 
-<body>
-  <nav>
-    <ul>
-      <li class="active"><a href="#home">Home</a></li>
-      <li><a href="#about">About Me</a></li>
-      <li><a href="#skills">Skills</a></li>
-      <li><a href="#projects">Projects</a></li>
-      <li><a href="#work">Work</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
-  </nav>
+<body class="public-body">
+  {% set active_page = 'portfolio' %}
+  {% include '_public_header.html' %}
 
-  <section id="home">
-    <div class="intro">
-      <h1>Ismaele Carbonari</h1>
-      <h2>AI · Robotics · Autonomous Systems</h2>
-      <p style="margin-top:1rem; line-height:1.8; font-size:1.1rem;">
-        Computer Science graduate and Artificial Intelligence Systems MSc student focused on robotics,
-        autonomous systems and intelligent software.
-      </p>
-      <p style="margin-top:0.5rem; font-size:0.95rem; opacity:0.9;">
-        Trentino, Italy &nbsp;|&nbsp;
-        <a href="https://github.com/ismacarbo" target="_blank" rel="noopener noreferrer"
-          style="color:#f7ca18;">github.com/ismacarbo</a>
-      </p>
-    </div>
-  </section>
+  <main class="public-main" id="main-content">
+    <section class="public-section hero-section" id="home">
+      <div class="section-shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Computer scientist · Trentino, Italy</p>
+          <h1>Building intelligence<br><span class="hero-title-accent">into real systems.</span></h1>
+          <p class="hero-lead">
+            I design software where AI, robotics and embedded computing meet—moving ideas from simulation into
+            observable, reliable physical systems.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="{{ url_for('projects') }}">Explore projects →</a>
+            <a class="button button-ghost" href="#contact">Start a conversation</a>
+          </div>
+          <div class="hero-meta" aria-label="Current profile">
+            <span class="signal-chip"><span class="status-dot online"></span>Available for collaboration</span>
+            <span class="signal-chip">MSc Artificial Intelligence Systems</span>
+            <span class="signal-chip">Self-hosted portfolio</span>
+          </div>
+        </div>
 
-  <section id="about">
-    <h2 class="section-title">About Me</h2>
-    <div class="content">
-      <p>
-        I am a Computer Science graduate and Artificial Intelligence Systems MSc student at the University of Trento.
-        I work at the intersection of software engineering, AI, robotics and embedded systems, with a focus on
-        intelligent autonomous systems and research-driven development.
-      </p>
-      <ul>
-        <li><strong>Current studies:</strong> MSc in Artificial Intelligence Systems at the University of Trento.</li>
-        <li><strong>Current work:</strong> Research &amp; Development at Femtorays / Fondazione Bruno Kessler.</li>
-        <li><strong>Focus:</strong> autonomous navigation, SLAM, sensor fusion, embedded computing and applied AI.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section id="skills">
-    <h2 class="section-title">Skills</h2>
-    <div class="content">
-      <h3>Education</h3>
-      <ul>
-        <li>
-          <strong>MSc Artificial Intelligence Systems — University of Trento</strong><br>
-          2026 – Present · Currently enrolled, with a focus on AI, intelligent systems, robotics and autonomy.
-        </li>
-        <li>
-          <strong>BSc Computer Science — University of Trento</strong><br>
-          2023 – July 2026 · Completed on 15 July 2026.<br>
-          Thesis: “DAL PLANNER GENERALE AL SISTEMA REALE” — Supervisor: Prof. Gastone Rosati Papini.<br>
-          Autonomous navigation and motion planning, developed from simulation toward validation on real robotic
-          systems.
-        </li>
-        <li>
-          <strong>I.T.T. Buonarroti</strong><br>
-          2018 – 2023 · High School Diploma in Computer Science.
-        </li>
-      </ul>
-
-      <h3>Robotics &amp; Autonomous Systems</h3>
-      <p>ROS / ROS 2 · SLAM · LiDAR · Sensor Fusion · Autonomous Navigation · Motion Planning · RGB-D · Vehicle Dynamics · Mobile Robotics</p>
-
-      <h3>AI &amp; Machine Learning</h3>
-      <p>PyTorch · Scikit-learn · NumPy · Pandas · Machine Learning · Neural Networks · Computer Vision · Local AI / LLM Experimentation</p>
-
-      <h3>Programming</h3>
-      <p>Python · C · C++ · Java · Kotlin · JavaScript · Bash · SQL</p>
-
-      <h3>Embedded &amp; IoT</h3>
-      <p>ESP32 · Arduino · Raspberry Pi · Jetson · MQTT · Protocol Buffers · Sensors · Serial / I²C · Hardware/software integration</p>
-
-      <h3>Infrastructure &amp; Software</h3>
-      <p>Linux · Fedora · Docker · Docker Compose · Git · CMake · Flask · REST APIs · PostgreSQL · Nginx · Tailscale · SSH</p>
-
-      <h3>Awards &amp; Activities</h3>
-      <ul>
-        <li><strong>CyberChallenge.IT — 2024:</strong> ethical hacking training and national competition.</li>
-        <li><strong>Cisco CCNA v7 — 2022:</strong> Routing &amp; Switching certification.</li>
-        <li><strong>Italian Olympiad in Informatics — 2022:</strong> Regional 5th Place.</li>
-        <li><strong>RoboCup Junior — 2022:</strong> Referee / Judge.</li>
-        <li><strong>Gruppo Giovani Carbonare — 2016 – Present:</strong> volunteer and community activities.</li>
-      </ul>
-
-      <h3>Languages</h3>
-      <p>Italian — Native · English — B2 · German — A2</p>
-    </div>
-  </section>
-
-  <section id="projects">
-    <h2 class="section-title">Projects</h2>
-    <div class="card-container">
-      <div class="card">
-        <h3>ARES — Autonomous Re-Survey System</h3>
-        <p>Ongoing autonomous robotics research project centered on exploration, mapping and persistent observation of environments through experiments on real mobile robots.</p>
-        <p><strong>Skills:</strong> ROS 2 · SLAM · LiDAR · RGB-D · Sensor Fusion · Autonomous Navigation</p>
-        <p><a href="/projects/robot" style="color:#f7ca18;">Open project →</a></p>
+        <aside class="hero-console" aria-label="Current focus">
+          <div class="console-header">
+            <strong>Current focus</strong>
+            <span class="console-status"><span class="status-dot online"></span>active</span>
+          </div>
+          <div class="console-rows">
+            <div class="console-row"><span>Research</span><strong>Autonomous systems</strong></div>
+            <div class="console-row"><span>Engineering</span><strong>Robotics · Edge AI</strong></div>
+            <div class="console-row"><span>Infrastructure</span><strong>Linux · IoT · Telemetry</strong></div>
+            <div class="console-row"><span>Method</span><strong>Build · Measure · Iterate</strong></div>
+          </div>
+          <p class="console-footer"><span>ISMA / PORTFOLIO</span><span>2026</span></p>
+        </aside>
       </div>
+    </section>
 
-      <div class="card">
-        <h3>General Planner / Bachelor Thesis</h3>
-        <p>A motion-planning and vehicle simulation framework evolved toward validation on physical robotic platforms, becoming the basis of my bachelor thesis.</p>
-        <p><strong>Skills:</strong> Python · C++ · pybind11 · Motion Planning · Simulation-to-Real</p>
-        <p><a href="/projects/robot" style="color:#f7ca18;">Open project →</a></p>
+    <section class="public-section" id="about">
+      <div class="section-shell">
+        <div class="section-heading">
+          <p class="eyebrow">About</p>
+          <h2>Software with a path to the physical world.</h2>
+        </div>
+        <div class="about-grid">
+          <div class="about-copy">
+            <p class="lead">
+              I am a Computer Science graduate and Artificial Intelligence Systems MSc student at the University of
+              Trento. I work across software engineering, AI, robotics and embedded systems.
+            </p>
+            <p>
+              My focus is research-driven development: autonomous navigation, SLAM, sensor fusion and dependable
+              infrastructure for experiments that leave the notebook and run on real hardware.
+            </p>
+            <a class="button button-text" href="{{ url_for('projects') }}">See the systems I am building →</a>
+          </div>
+          <div class="fact-grid" aria-label="Profile highlights">
+            <article class="fact-card"><span>Current study</span><strong>MSc Artificial Intelligence Systems</strong><small>University of Trento</small></article>
+            <article class="fact-card"><span>Current work</span><strong>Research &amp; Development</strong><small>Femtorays / FBK</small></article>
+            <article class="fact-card"><span>Core focus</span><strong>Robotics and autonomy</strong><small>From simulation to real systems</small></article>
+            <article class="fact-card"><span>Engineering style</span><strong>Observable by design</strong><small>Telemetry, testing and iteration</small></article>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="card">
-        <h3>RedPanda4x4</h3>
-        <p>An evolving mobile robotics and vehicle experimentation platform for embedded sensing, robotics software and hardware/software integration.</p>
-        <p><strong>Skills:</strong> ROS 2 · IMU · Sensors · Embedded Systems · Vehicle Telemetry</p>
-        <p><a href="/projects/robot" style="color:#f7ca18;">Open project →</a></p>
+    <section class="public-section" id="skills">
+      <div class="section-shell">
+        <div class="section-heading">
+          <p class="eyebrow">Capabilities</p>
+          <h2>A stack built for intelligent machines.</h2>
+          <p class="section-copy">From model and planner to sensor, protocol, deployment and operational feedback.</p>
+        </div>
+        <div class="skill-grid">
+          <article class="skill-card"><span class="skill-number">01 / AUTONOMY</span><h3>Robotics</h3><p>ROS / ROS 2 · SLAM · LiDAR · sensor fusion · autonomous navigation · motion planning · RGB-D · vehicle dynamics</p></article>
+          <article class="skill-card"><span class="skill-number">02 / INTELLIGENCE</span><h3>AI &amp; ML</h3><p>PyTorch · scikit-learn · NumPy · Pandas · neural networks · computer vision · local model experimentation</p></article>
+          <article class="skill-card"><span class="skill-number">03 / SOFTWARE</span><h3>Programming</h3><p>Python · C · C++ · Java · Kotlin · JavaScript · Bash · SQL · APIs · systems integration</p></article>
+          <article class="skill-card"><span class="skill-number">04 / EDGE</span><h3>Embedded &amp; IoT</h3><p>ESP32 · Arduino · Raspberry Pi · Jetson · MQTT · Protocol Buffers · sensors · serial and I²C</p></article>
+          <article class="skill-card"><span class="skill-number">05 / OPERATIONS</span><h3>Infrastructure</h3><p>Linux · Fedora · Docker · Git · CMake · Flask · PostgreSQL · Nginx · Tailscale · SSH</p></article>
+          <article class="skill-card"><span class="skill-number">06 / FOUNDATION</span><h3>Education</h3><p>MSc Artificial Intelligence Systems · BSc Computer Science · thesis on motion planning from simulation to real robots</p></article>
+        </div>
       </div>
+    </section>
 
-      <div class="card">
-        <h3>AutoIrrigation</h3>
-        <p>Embedded and IoT system for automatic irrigation and environmental monitoring, connecting sensors, controllers and actuation to a server.</p>
-        <p><strong>Skills:</strong> ESP32 · IoT · MQTT · Protocol Buffers · Electronics</p>
-        <p><a href="/projects/iot" style="color:#f7ca18;">Open project →</a></p>
+    <section class="public-section" id="projects">
+      <div class="section-shell">
+        <div class="section-heading">
+          <p class="eyebrow">Selected projects</p>
+          <h2>Research, prototypes and infrastructure.</h2>
+          <p class="section-copy">Systems used to explore autonomy, sensing, edge intelligence and real-world operation.</p>
+        </div>
+        <div class="card-container">
+          <article class="card">
+            <p class="card-kicker">Robotics · Research</p><h3>ARES — Autonomous Re-Survey System</h3>
+            <p>Exploration, mapping and persistent observation through experiments on real mobile robots.</p>
+            <p class="tag-line"><strong>Stack:</strong> ROS 2 · SLAM · LiDAR · RGB-D · Sensor Fusion</p>
+            <a class="button button-text" href="{{ url_for('project_robot') }}">Open project →</a>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Motion planning · Thesis</p><h3>General Planner</h3>
+            <p>A vehicle simulation and motion-planning framework evolved toward validation on physical platforms.</p>
+            <p class="tag-line"><strong>Stack:</strong> Python · C++ · pybind11 · Simulation-to-Real</p>
+            <a class="button button-text" href="{{ url_for('project_robot') }}">Open project →</a>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Embedded robotics</p><h3>RedPanda4x4</h3>
+            <p>A mobile vehicle platform for embedded sensing, robotics software and hardware integration.</p>
+            <p class="tag-line"><strong>Stack:</strong> ROS 2 · IMU · Sensors · Telemetry</p>
+            <a class="button button-text" href="{{ url_for('project_robot') }}">Open project →</a>
+          </article>
+          <article class="card">
+            <p class="card-kicker">IoT · Edge systems</p><h3>AutoIrrigation</h3>
+            <p>A generic device protocol connecting environmental sensing, actuation and a Raspberry Pi control plane.</p>
+            <p class="tag-line"><strong>Stack:</strong> ESP32 · MQTT · Protobuf · nanopb</p>
+            <a class="button button-text" href="{{ url_for('project_iot') }}">Open project →</a>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Local AI</p><h3>Offline AI Assistant</h3>
+            <p>Experiments with offline speech recognition, local inference and knowledge-backed retrieval.</p>
+            <p class="tag-line"><strong>Stack:</strong> Python · Local models · RAG concepts</p>
+            <a class="button button-text" href="{{ url_for('project_ml') }}">Open project →</a>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Self-hosting</p><h3>Home Lab &amp; Pi Monitor</h3>
+            <p>Personal infrastructure for deployment, observability, robotics telemetry and secure remote access.</p>
+            <p class="tag-line"><strong>Stack:</strong> Linux · Docker · Flask · Nginx · Tailscale</p>
+            <a class="button button-text" href="{{ url_for('projects') }}">View all projects →</a>
+          </article>
+        </div>
       </div>
+    </section>
 
-      <div class="card">
-        <h3>Local / Offline AI Assistant</h3>
-        <p>Ongoing experimentation with offline speech recognition, local model inference and a future self-hosted knowledge-backed assistant.</p>
-        <p><strong>Skills:</strong> Local AI · Speech Recognition · Python · Self-hosting · RAG Concepts</p>
-        <p><a href="/projects/machine_learning" style="color:#f7ca18;">Open project →</a></p>
+    <section class="public-section" id="work">
+      <div class="section-shell">
+        <div class="section-heading"><p class="eyebrow">Experience</p><h2>Engineering through experimentation.</h2></div>
+        <div class="timeline">
+          <article class="card"><p class="work-date">JUN 2025 — PRESENT</p><h3>Research &amp; Development — Femtorays / FBK</h3><p>Software engineering, experimental systems, data acquisition and integration between software and physical systems.</p></article>
+          <article class="card"><p class="work-date">OCT 2024 — PRESENT</p><h3>Telemetry Engineer — E-agleTRT</h3><p>Real-time acquisition, logging and visualization software for an electric Formula SAE race car.</p><a class="button button-text" href="https://www.eagletrt.it/" target="_blank" rel="noopener noreferrer">Team website ↗</a></article>
+          <article class="card"><p class="work-date">AUG 2023 — PRESENT</p><h3>Freelance Software Developer</h3><p>Backend systems, APIs, databases and software architecture using Python, C/C++, Java and JavaScript.</p></article>
+          <article class="card"><p class="work-date">JUL 2022</p><h3>IT Technician Intern — Michele Merz</h3><p>IT system setup, software configuration, hardware support and frontend/backend development.</p></article>
+        </div>
       </div>
+    </section>
 
-      <div class="card">
-        <h3>Home Lab &amp; Self-Hosting</h3>
-        <p>Personal infrastructure for experimenting with Linux, networking, servers and self-hosted software.</p>
-        <p><strong>Skills:</strong> Linux · Docker · PostgreSQL · Nginx · Tailscale · Raspberry Pi</p>
-        <p><a href="#" style="color:#888; pointer-events:none;">Coming soon</a></p>
+    <section class="public-section" id="contact">
+      <div class="section-shell">
+        <div class="contact-panel">
+          <div><p class="eyebrow">Contact</p><h2>Have a difficult system to make real?</h2><p>Let’s talk about robotics, AI, embedded systems or experimental engineering.</p></div>
+          <div class="contact-actions">
+            <a class="button button-primary" href="mailto:tiados04@gmail.com?subject=Portfolio%20contact">Send an email →</a>
+            <a class="button button-ghost" href="https://github.com/ismacarbo" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <section id="work">
-    <h2 class="section-title">Work</h2>
-    <div class="card-container">
-      <div class="card">
-        <h3>Research &amp; Development — Femtorays / FBK</h3>
-        <p>June 2025 – Present · Trento, Italy</p>
-        <p>Research &amp; Development work involving software engineering, experimental systems, data acquisition and applied research, including integration between software and physical systems.</p>
-      </div>
-
-      <div class="card">
-        <h3>Telemetry Engineer — E-agle / E-agleTRT</h3>
-        <p>October 2024 – Present · Formula SAE Team</p>
-        <p>Telemetry and software systems for an electric race car, including real-time sensor data acquisition, logging and visualization.</p>
-        <a href="https://www.eagletrt.it/" target="_blank" rel="noopener noreferrer" style="color:#f7ca18;">Learn more</a>
-      </div>
-
-      <div class="card">
-        <h3>Freelance Software Developer</h3>
-        <p>August 2023 – Present · Software / Full-Stack Developer</p>
-        <p>Backend development, APIs, databases and software architecture using Python, C/C++, Java and JavaScript.</p>
-      </div>
-
-      <div class="card">
-        <h3>IT Technician Intern — Michele Merz</h3>
-        <p>July 2022 · Spini di Gardolo, Italy</p>
-        <p>IT system setup, software installation and configuration, hardware support and basic frontend/backend development.</p>
-      </div>
-    </div>
-  </section>
-
-  <section id="contact">
-    <h2 class="section-title">Contact</h2>
-    <div class="contact-info">
-      <p><strong>Location:</strong> Trentino, Italy</p>
-      <p><strong>Email:</strong> <a href="mailto:tiados04@gmail.com" style="color:#f7ca18;">tiados04@gmail.com</a></p>
-      <p>
-        <a href="https://github.com/ismacarbo" target="_blank" rel="noopener noreferrer" style="color:#f7ca18;">GitHub</a>
-        &nbsp;|&nbsp;
-        <a href="https://www.linkedin.com/in/isma-carbo-6a9a32251/" target="_blank" rel="noopener noreferrer"
-          style="color:#f7ca18;">LinkedIn</a>
-      </p>
-    </div>
-    <p style="text-align:center; margin-top:30px;">
-      <a href="mailto:tiados04@gmail.com?subject=Contatto%20dal%20portfolio" style="display:inline-block; background:#f7ca18; color:#1b1b1b; padding:12px 20px; border-radius:4px; font-weight:700;">Send an email →</a>
-    </p>
-  </section>
-
-  <script>
-    (() => {
-      const sections = ['#home', '#about', '#skills', '#projects', '#work', '#contact'];
-      const menuItems = Array.from(document.querySelectorAll('nav li'));
-
-      function updateMenu() {
-        const scrollPos = window.scrollY;
-        let activeIndex = 0;
-        sections.forEach(function (section, index) {
-          const target = document.querySelector(section);
-          if (!target) return;
-          const offset = target.offsetTop - 150;
-          const height = target.offsetHeight;
-          if (scrollPos >= offset && scrollPos < offset + height) {
-            activeIndex = index;
-          }
-        });
-        menuItems.forEach((item, index) => item.classList.toggle('active', index === activeIndex));
-      }
-
-      document.querySelectorAll('nav a[href^="#"]').forEach((link) => {
-        link.addEventListener('click', (event) => {
-          const target = document.querySelector(link.getAttribute('href'));
-          if (!target) return;
-          event.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth' });
-        });
-      });
-      document.addEventListener('scroll', updateMenu, { passive: true });
-      updateMenu();
-    })();
-  </script>
+  {% include '_public_footer.html' %}
 </body>
 
 </html>

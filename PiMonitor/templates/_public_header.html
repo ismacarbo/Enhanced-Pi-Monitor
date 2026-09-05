@@ -1,0 +1,36 @@
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header" data-site-header>
+  <div class="site-header-inner">
+    <a class="brand" href="{{ url_for('portfolio') }}" aria-label="Ismaele Carbonari — home">
+      <span class="brand-mark" aria-hidden="true">π</span>
+      <span>
+        <strong>Ismaele Carbonari</strong>
+        <small>AI · Robotics · Systems</small>
+      </span>
+    </a>
+
+    <button class="site-menu-toggle" type="button" aria-expanded="false"
+      aria-controls="site-navigation" data-menu-toggle>
+      <span class="sr-only">Toggle navigation</span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+
+    <div class="site-navigation" id="site-navigation" data-navigation>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="{{ url_for('portfolio') }}#home" data-section="home"
+          {% if active_page == 'portfolio' %}class="active" aria-current="page"{% endif %}>Home</a>
+        <a href="{{ url_for('portfolio') }}#about" data-section="about">About</a>
+        <a href="{{ url_for('portfolio') }}#skills" data-section="skills">Skills</a>
+        <a href="{{ url_for('projects') }}"
+          {% if active_page == 'projects' %}class="active" aria-current="page"{% endif %}>Projects</a>
+        <a href="{{ url_for('portfolio') }}#work" data-section="work">Work</a>
+        <a href="{{ url_for('portfolio') }}#contact" data-section="contact">Contact</a>
+      </nav>
+      <a class="button button-primary site-dashboard-link" href="{{ url_for('dashboard') }}">
+        <span class="status-dot online" aria-hidden="true"></span>
+        Control center
+      </a>
+    </div>
+  </div>
+</header>

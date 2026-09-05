@@ -4,28 +4,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Robotics, autonomous navigation and real-world systems by Ismaele Carbonari." />
   <title>Robotics &amp; Autonomous Systems - Ismaele Carbonari</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+  <script defer src="{{ url_for('static', filename='js/public.js') }}"></script>
 </head>
 
-<body>
-  <nav>
-    <ul>
-      <li><a href="/portfolio#home">Home</a></li>
-      <li><a href="/portfolio#about">About Me</a></li>
-      <li><a href="/portfolio#skills">Skills</a></li>
-      <li class="active"><a href="/projects">Projects</a></li>
-      <li><a href="/portfolio#work">Work</a></li>
-      <li><a href="/portfolio#contact">Contact</a></li>
-    </ul>
-  </nav>
+<body class="public-body">
+  {% set active_page = 'projects' %}
+  {% include '_public_header.html' %}
 
-  <section>
-    <div class="back"><a href="/projects">← Back to Projects</a></div>
-    <h2 class="section-title">Robotics &amp; Autonomous Systems</h2>
+  <main class="public-main project-main" id="main-content">
+    <section class="public-section page-hero">
+      <div class="section-shell">
+        <div class="back"><a href="{{ url_for('projects') }}">← Back to projects</a></div>
+        <div class="section-heading">
+          <p class="eyebrow">Robotics · Autonomy · Physical systems</p>
+          <h1>Robotics &amp; Autonomous Systems</h1>
+          <p class="section-copy">Research and personal platforms developed from simulation through experiments on real mobile robots.</p>
+        </div>
+      </div>
+    </section>
 
-    <div class="content">
-      <p>
+    <section class="public-section project-content-section">
+      <div class="section-shell content">
+      <p class="lead">
         Research and personal platforms used to develop autonomous navigation, sensing and embedded robotics through
         simulation and experiments on physical systems.
       </p>
@@ -43,7 +46,7 @@
         <div class="media-grid">
           <figure>
             <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add ares_platform.jpg</div>
+              <div class="media-fallback visible">ARES field documentation in progress</div>
             </div>
             <figcaption>ARES mobile robotics experiments.</figcaption>
           </figure>
@@ -63,7 +66,7 @@
         <div class="media-grid">
           <figure>
             <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add general_planner.jpg</div>
+              <div class="media-fallback visible">Planner validation media in progress</div>
             </div>
             <figcaption>Simulation and physical validation work.</figcaption>
           </figure>
@@ -82,7 +85,7 @@
         <div class="media-grid">
           <figure>
             <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add redpanda4x4_main.jpg</div>
+              <div class="media-fallback visible">RedPanda4x4 media in progress</div>
             </div>
             <figcaption>RedPanda4x4 platform.</figcaption>
           </figure>
@@ -90,8 +93,7 @@
 
         <h4 class="subheading">Link</h4>
         <ul>
-          <li><a href="https://github.com/ismacarbo/RedPanda4x4" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">RedPanda4x4 on GitHub</a></li>
+          <li><a href="https://github.com/ismacarbo/RedPanda4x4" target="_blank" rel="noopener noreferrer">RedPanda4x4 on GitHub ↗</a></li>
         </ul>
       </div>
 
@@ -107,7 +109,7 @@
         <div class="media-grid">
           <figure>
             <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add botfusion_robot.jpg</div>
+              <div class="media-fallback visible">BotFusion media in progress</div>
             </div>
             <figcaption>BotFusion robot platform.</figcaption>
           </figure>
@@ -115,8 +117,7 @@
 
         <h4 class="subheading">Link</h4>
         <ul>
-          <li><a href="https://github.com/ismacarbo/bot-fusion" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">BotFusion on GitHub</a></li>
+          <li><a href="https://github.com/ismacarbo/bot-fusion" target="_blank" rel="noopener noreferrer">BotFusion on GitHub ↗</a></li>
         </ul>
       </div>
 
@@ -132,7 +133,7 @@
         <div class="media-grid">
           <figure>
             <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add enhanced_monitor_ui.jpg</div>
+              <div class="media-fallback visible">Monitor interface media in progress</div>
             </div>
             <figcaption>Monitoring interface and runtime diagnostics.</figcaption>
           </figure>
@@ -140,12 +141,14 @@
 
         <h4 class="subheading">Link</h4>
         <ul>
-          <li><a href="https://github.com/ismacarbo/Enhanced-Pi-Monitor" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">Enhanced Pi Monitor on GitHub</a></li>
+          <li><a href="https://github.com/ismacarbo/Enhanced-Pi-Monitor" target="_blank" rel="noopener noreferrer">Enhanced Pi Monitor on GitHub ↗</a></li>
         </ul>
       </div>
-    </div>
-  </section>
+      </div>
+    </section>
+  </main>
+
+  {% include '_public_footer.html' %}
 </body>
 
 </html>

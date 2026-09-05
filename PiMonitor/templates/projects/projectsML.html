@@ -2,107 +2,64 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artificial Intelligence &amp; Machine Learning - Ismaele Carbonari</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Local AI, neural-network and computer-vision projects by Ismaele Carbonari.">
+  <title>AI &amp; Machine Learning — Ismaele Carbonari</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+  <script defer src="{{ url_for('static', filename='js/public.js') }}"></script>
 </head>
 
-<body>
-  <nav>
-    <ul>
-      <li><a href="/portfolio#home">Home</a></li>
-      <li><a href="/portfolio#about">About Me</a></li>
-      <li><a href="/portfolio#skills">Skills</a></li>
-      <li class="active"><a href="/projects">Projects</a></li>
-      <li><a href="/portfolio#work">Work</a></li>
-      <li><a href="/portfolio#contact">Contact</a></li>
-    </ul>
-  </nav>
+<body class="public-body">
+  {% set active_page = 'projects' %}
+  {% include '_public_header.html' %}
 
-  <section>
-    <div class="back"><a href="/projects">← Back to Projects</a></div>
-    <h2 class="section-title">Artificial Intelligence &amp; Machine Learning</h2>
-
-    <div class="content">
-      <p>Personal experiments in local AI, machine learning and computer vision, designed to run with direct control over the software stack.</p>
-
-      <div class="project-block">
-        <h3>Local / Offline AI Assistant</h3>
-        <p>
-          An evolving personal project exploring offline speech recognition and local model inference. It is moving
-          toward a self-hosted assistant connected to a personal knowledge base and RAG-based retrieval.
-        </p>
-        <p class="project-meta"><strong>Skills:</strong> Local AI · LLM Experimentation · Speech Recognition · Python · Self-hosting · RAG Concepts</p>
-
-        <h4 class="subheading">Gallery</h4>
-        <div class="media-grid">
-          <figure>
-            <div class="media ar-4x3 media-placeholder">
-              <div class="media-fallback visible">Placeholder: add local_ai_assistant.jpg</div>
-            </div>
-            <figcaption>Local AI and self-hosted assistant experiments.</figcaption>
-          </figure>
+  <main class="public-main project-main" id="main-content">
+    <section class="public-section page-hero">
+      <div class="section-shell">
+        <div class="back"><a href="{{ url_for('projects') }}">← Back to projects</a></div>
+        <div class="section-heading">
+          <p class="eyebrow">Local intelligence · Computer vision</p>
+          <h1>AI &amp; Machine Learning</h1>
+          <p class="section-copy">Experiments designed to keep direct control over data, models and the complete inference stack.</p>
         </div>
       </div>
+    </section>
 
-      <div class="project-block">
-        <h3>DrawingNeuralNetwork</h3>
-        <p>
-          An interactive drawing and classification experiment used to explore preprocessing, compact neural networks
-          and real-time inference feedback.
-        </p>
-        <p class="project-meta"><strong>Skills:</strong> Python · PyTorch · Neural Networks · Image Preprocessing · Interactive Inference</p>
+    <section class="public-section project-content-section">
+      <div class="section-shell content">
+        <article class="project-block">
+          <h3>Local / Offline AI Assistant</h3>
+          <p>An evolving system exploring offline speech recognition and local model inference, moving toward a self-hosted assistant connected to a personal knowledge base.</p>
+          <p class="project-meta"><strong>Stack:</strong> Local AI · LLM experimentation · Speech recognition · Python · Self-hosting · RAG concepts</p>
+          <h4 class="subheading">Gallery</h4>
+          <div class="media-grid"><figure><div class="media ar-4x3 media-placeholder"><div class="media-fallback">Assistant interface documentation in progress</div></div><figcaption>Local inference and knowledge retrieval experiments.</figcaption></figure></div>
+        </article>
 
-        <h4 class="subheading">Gallery</h4>
-        <div class="media-grid">
-          <figure>
-            <div class="media ar-4x3">
-              <img src="{{ url_for('static', filename='img/ml_drawing_app.jpg') }}"
-                alt="Drawing application classification interface" loading="lazy"
-                onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');">
-              <div class="media-fallback">Image not found. Add PiMonitor/static/img/ml_drawing_app.jpg.</div>
-            </div>
-            <figcaption>Interactive drawing classification.</figcaption>
-          </figure>
-        </div>
+        <article class="project-block">
+          <h3>DrawingNeuralNetwork</h3>
+          <p>An interactive drawing and classification system used to explore preprocessing, compact neural networks and immediate inference feedback.</p>
+          <p class="project-meta"><strong>Stack:</strong> Python · PyTorch · Neural networks · Image preprocessing · Interactive inference</p>
+          <h4 class="subheading">Gallery</h4>
+          <div class="media-grid"><figure><div class="media ar-4x3"><img src="{{ url_for('static', filename='img/ml_drawing_app.jpg') }}" alt="Drawing application classification interface" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');"><div class="media-fallback">Drawing interface documentation in progress</div></div><figcaption>Interactive drawing classification.</figcaption></figure></div>
+          <h4 class="subheading">Repository</h4>
+          <ul><li><a href="https://github.com/ismacarbo/DrawingNeuralNetwork" target="_blank" rel="noopener noreferrer">DrawingNeuralNetwork on GitHub ↗</a></li></ul>
+        </article>
 
-        <h4 class="subheading">Link</h4>
-        <ul>
-          <li><a href="https://github.com/ismacarbo/DrawingNeuralNetwork" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">DrawingNeuralNetwork on GitHub</a></li>
-        </ul>
+        <article class="project-block">
+          <h3>FaceRecognition</h3>
+          <p>A local, real-time computer-vision experiment for face detection and identification, with an emphasis on offline execution and practical integration.</p>
+          <p class="project-meta"><strong>Stack:</strong> Python · OpenCV · Computer vision · Real-time processing · Local inference</p>
+          <h4 class="subheading">Gallery</h4>
+          <div class="media-grid"><figure><div class="media ar-4x3"><img src="{{ url_for('static', filename='img/ml_face_demo.jpg') }}" alt="Local face recognition demonstration" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');"><div class="media-fallback">Vision demo documentation in progress</div></div><figcaption>Local face detection and identification.</figcaption></figure></div>
+          <h4 class="subheading">Repository</h4>
+          <ul><li><a href="https://github.com/ismacarbo/FaceRecognition" target="_blank" rel="noopener noreferrer">FaceRecognition on GitHub ↗</a></li></ul>
+        </article>
       </div>
+    </section>
+  </main>
 
-      <div class="project-block">
-        <h3>FaceRecognition</h3>
-        <p>
-          A local, real-time computer vision experiment for face detection and identification, developed with an
-          emphasis on offline execution and practical integration.
-        </p>
-        <p class="project-meta"><strong>Skills:</strong> Python · OpenCV · Computer Vision · Real-time Processing · Local Inference</p>
-
-        <h4 class="subheading">Gallery</h4>
-        <div class="media-grid">
-          <figure>
-            <div class="media ar-4x3">
-              <img src="{{ url_for('static', filename='img/ml_face_demo.jpg') }}"
-                alt="Local face recognition demonstration" loading="lazy"
-                onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');">
-              <div class="media-fallback">Image not found. Add PiMonitor/static/img/ml_face_demo.jpg.</div>
-            </div>
-            <figcaption>Local face detection and identification experiment.</figcaption>
-          </figure>
-        </div>
-
-        <h4 class="subheading">Link</h4>
-        <ul>
-          <li><a href="https://github.com/ismacarbo/FaceRecognition" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">FaceRecognition on GitHub</a></li>
-        </ul>
-      </div>
-    </div>
-  </section>
+  {% include '_public_footer.html' %}
 </body>
 
 </html>

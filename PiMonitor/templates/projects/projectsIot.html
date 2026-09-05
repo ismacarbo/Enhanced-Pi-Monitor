@@ -2,59 +2,67 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AutoIrrigation - Ismaele Carbonari</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AutoIrrigation — an extensible ESP32, MQTT and Protocol Buffers device platform.">
+  <title>AutoIrrigation — Ismaele Carbonari</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styleStatic.css') }}">
+  <script defer src="{{ url_for('static', filename='js/public.js') }}"></script>
 </head>
 
-<body>
-  <nav>
-    <ul>
-      <li><a href="/portfolio#home">Home</a></li>
-      <li><a href="/portfolio#about">About Me</a></li>
-      <li><a href="/portfolio#skills">Skills</a></li>
-      <li class="active"><a href="/projects">Projects</a></li>
-      <li><a href="/portfolio#work">Work</a></li>
-      <li><a href="/portfolio#contact">Contact</a></li>
-    </ul>
-  </nav>
+<body class="public-body">
+  {% set active_page = 'projects' %}
+  {% include '_public_header.html' %}
 
-  <section>
-    <div class="back"><a href="/projects">← Back to Projects</a></div>
-    <h2 class="section-title">AutoIrrigation</h2>
-
-    <div class="content">
-      <div class="project-block">
-        <h3>Automatic Irrigation &amp; Environmental Monitoring</h3>
-        <p>
-          An embedded and IoT project combining sensors, embedded controllers, actuation and server communication for
-          automatic irrigation and environmental monitoring. The platform also provides room for ongoing edge
-          intelligence and TinyML experimentation.
-        </p>
-        <p class="project-meta"><strong>Skills:</strong> ESP32 · Embedded Development · IoT · Sensors · MQTT · Protocol Buffers · Electronics · Hardware/software Integration</p>
-
-        <h4 class="subheading">Gallery</h4>
-        <div class="media-grid">
-          <figure>
-            <div class="media ar-4x3">
-              <img src="{{ url_for('static', filename='img/autoIrrigation.jpg') }}"
-                alt="AutoIrrigation embedded controller and sensors" loading="lazy"
-                onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');">
-              <div class="media-fallback">Image not found. Add PiMonitor/static/img/autoIrrigation.jpg.</div>
-            </div>
-            <figcaption>AutoIrrigation controller and sensing setup.</figcaption>
-          </figure>
+  <main class="public-main project-main" id="main-content">
+    <section class="public-section page-hero">
+      <div class="section-shell">
+        <div class="back"><a href="{{ url_for('projects') }}">← Back to projects</a></div>
+        <div class="section-heading">
+          <p class="eyebrow">IoT · Embedded · Control systems</p>
+          <h1>AutoIrrigation</h1>
+          <p class="section-copy">A field device platform that treats irrigation as its first domain—not its architectural limit.</p>
         </div>
-
-        <h4 class="subheading">Link</h4>
-        <ul>
-          <li><a href="https://github.com/ismacarbo/Enhanced-Pi-Monitor" target="_blank" rel="noopener noreferrer"
-              style="color:#f7ca18;">Code and notes on GitHub</a></li>
-        </ul>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <section class="public-section project-content-section">
+      <div class="section-shell content">
+        <article class="project-block">
+          <h3>Generic protocol, concrete device</h3>
+          <p>
+            AutoIrrigation combines environmental sensors, embedded controllers and non-blocking actuation with a
+            versioned Generic Device Protocol. Protobuf payloads travel over MQTT between ESP32 nodes and a modular
+            Raspberry Pi server, while a local CYD touchscreen provides direct control and feedback.
+          </p>
+          <p class="project-meta"><strong>Stack:</strong> ESP32 · C++ · nanopb · MQTT · Mosquitto · Protocol Buffers · Python · Flask · Raspberry Pi</p>
+
+          <h4 class="subheading">Architecture</h4>
+          <p>Domain messages → Generic Device Protocol → Protobuf → MQTT, with environment, irrigation and power implemented as independent domains.</p>
+
+          <h4 class="subheading">Gallery</h4>
+          <div class="media-grid">
+            <figure>
+              <div class="media ar-4x3">
+                <img src="{{ url_for('static', filename='img/autoIrrigation.jpg') }}"
+                  alt="AutoIrrigation embedded controller and sensors" loading="lazy"
+                  onerror="this.style.display='none'; this.parentElement.classList.add('media-missing');">
+                <div class="media-fallback">Hardware documentation in progress</div>
+              </div>
+              <figcaption>ESP32 actuator, sensor stack and local CYD control surface.</figcaption>
+            </figure>
+          </div>
+
+          <h4 class="subheading">Repository</h4>
+          <ul>
+            <li><a href="https://github.com/ismacarbo/autoIrrigation" target="_blank" rel="noopener noreferrer">AutoIrrigation on GitHub ↗</a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  {% include '_public_footer.html' %}
 </body>
 
 </html>
